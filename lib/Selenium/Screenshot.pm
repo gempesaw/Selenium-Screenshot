@@ -1,6 +1,6 @@
 package Selenium::Screenshot;
 
-# ABSTRACT: Compare and contrast screenshots in PNG format
+# ABSTRACT: Compare and contrast Webdriver screenshots in PNG format
 use Moo;
 use Image::Compare;
 use Imager qw/:handy/;
@@ -85,7 +85,7 @@ has png => (
 =attr folder
 
 OPTIONAL - a string where you'd like to save the screenshots on your
-local machine. It will be L<Cwd/abs_path>'d and we'll try to save
+local machine. It will be run through L<Cwd/abs_path> and we'll try to save
 there.
 
 =cut
@@ -133,10 +133,12 @@ has metadata => (
 
 OPTIONAL - set the threshold at which images should be considered the
 same. The range is from 0 to 100; for comparison, these two images are
-N percent different, and these two images are N percent different.
+N percent different, and these two images are N percent different. The
+default threshold is 5 out of 100.
 
 =cut
 
+# TODO: add threshold tests
 # TODO: provide reference images
 
 has threshold => (
@@ -170,7 +172,7 @@ has _cmp => (
 =method compare
 
 C<compare> requires one argument: the filename of a PNG to compare
-against. It must be the exact same size as the png you passed in to
+against. It must be the exact same size as the PNG you passed in to
 this instance of Screenshot. It returns a boolean as to whether the
 images meet your L</threshold> for similarity.
 
@@ -198,7 +200,7 @@ sub compare {
 
 C<difference> requires one argument: the filename of a PNG to compare
 against. Like L</compare>, the other file must contain a PNG of the
-exact same size as the png you passed into this instance of
+exact same size as the PNG you passed into this instance of
 screenshot. Note that for larger images, this method will take
 noticeably long to resolve.
 
