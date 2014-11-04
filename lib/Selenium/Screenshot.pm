@@ -285,4 +285,15 @@ sub _sanitize_string {
     return $dirty_string;
 }
 
+=head1 SEE ALSO
+
+Image::Compare
+Image::Magick
+Selenium::Remote::Driver
+https://github.com/bslatkin/dpxdt
+https://github.com/facebook/huxley
+https://github.com/BBC-News/wraith
+
+=cut
+
 1;

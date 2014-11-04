@@ -131,6 +131,17 @@ provide metadata; timestamps aren't very evocative.
 
 Get the filename that we constructed for this screenshot.
 
+# SEE ALSO
+
+Please see those modules/websites for more information related to this module.
+
+- [Image::Compare](https://metacpan.org/pod/Image::Compare)
+- [Image::Magick](https://metacpan.org/pod/Image::Magick)
+- [Selenium::Remote::Driver](https://metacpan.org/pod/Selenium::Remote::Driver)
+- [https://github.com/bslatkin/dpxdt](https://github.com/bslatkin/dpxdt)
+- [https://github.com/facebook/huxley](https://github.com/facebook/huxley)
+- [https://github.com/BBC-News/wraith](https://github.com/BBC-News/wraith)
+
 # BUGS
 
 Please report any bugs or feature requests on the bugtracker website
