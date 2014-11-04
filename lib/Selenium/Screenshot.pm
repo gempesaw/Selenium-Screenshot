@@ -9,6 +9,61 @@ use Carp qw/croak carp/;
 use Cwd qw/abs_path/;
 use MIME::Base64;
 
+=head1 SYNOPSIS
+
+    my $driver = Selenium::Remote::Driver->new;
+    $driver->get('http://www.google.com/404');
+
+    my $orig = Selenium::Screenshot->new(
+        png => $driver->screenshot,
+        metadata => {
+            build => 'prod',
+            browser => 'firefox',
+            'any metadata' => 'you might like'
+        }
+    );
+
+    # Alter the page by turning the background blue
+    $driver->execute_script('document.getElementsByTagName("body")[0].style.backgroundColor = "blue"');
+
+    # Take another screenshot
+    my $blue_file = Selenium::Screenshot->new(
+        png => $driver->screenshot,
+        metadata => {
+            build => 'stage',
+            bg => 'blue',
+            url => 'http://www.google.com'
+        }
+    )->save;
+
+    unless ($orig->compare($blue_file)) {
+        my $diff_file = $orig->difference($blue_file);
+        print 'The images differ; see ' . $diff_file . ' for details';
+    }
+
+=head1 DESCRIPTION
+
+Selenium::Screenshot is a wrapper class for L<Image::Compare>. It
+dumbly handles persisting your screenshots to disk and setting up the
+parameters to L<Image::Compare> to allow you to extract difference
+images between two states of your app. For example, you might be
+interested in ensuring that your CSS refactor hasn't negatively
+impacted other parts of your web app.
+
+=head1 INSTALLATION
+
+This module depends on L<Image::Compare> for comparison, and
+L<Imager::File::PNG> for PNG support. The latter depends on
+C<libpng-devel>; consult your local googles on how to get the
+appropriate libraries installed on your system. The following commands
+may be of aid on linux systems, or they may not help at all:
+
+    sudo apt-get install libpng-dev
+    sudo yum install libpng-devel
+
+For OS X, perhaps L<this
+page|http://ethan.tira-thompson.com/Mac_OS_X_Ports.html> may help.
+
 =attr png
 
 REQUIRED - A base64 encoded string representation of a png. For
@@ -82,9 +137,17 @@ N percent different, and these two images are N percent different.
 
 =cut
 
+# TODO: provide reference images
+
 has threshold => (
     is => 'ro',
     lazy => 1,
+    coerce => sub {
+        my ($threshold) = @_;
+
+        my $scaling = 255 * sqrt(3) / 100;
+        return $threshold * $scaling;
+    },
     default => sub { 5 }
 );
 
@@ -104,8 +167,18 @@ has _cmp => (
     }
 );
 
+=method compare
+
+C<compare> requires one argument: the filename of a PNG to compare
+against. It must be the exact same size as the png you passed in to
+this instance of Screenshot. It returns a boolean as to whether the
+images meet your L</threshold> for similarity.
+
+=cut
+
 sub compare {
     my ($self, $opponent) = @_;
+    die 'Don\'t know what to compare with' unless $opponent;
 
     $self->save;
     $self->_cmp->set_image2( img => $opponent );
@@ -121,8 +194,22 @@ sub compare {
     return $self->_cmp->compare;
 }
 
+=method difference
+
+C<difference> requires one argument: the filename of a PNG to compare
+against. Like L</compare>, the other file must contain a PNG of the
+exact same size as the png you passed into this instance of
+screenshot. Note that for larger images, this method will take
+noticeably long to resolve.
+
+The difference image is scaled from white for no change to fuschia for
+100% change.
+
+=cut
+
 sub difference {
     my ($self, $opponent) = @_;
+    die 'Don\'t know what to compare with' unless $opponent;
 
     $self->_cmp->set_image2(
         img => $opponent
