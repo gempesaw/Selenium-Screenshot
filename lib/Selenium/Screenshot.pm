@@ -9,6 +9,8 @@ use Carp qw/croak carp/;
 use Cwd qw/abs_path/;
 use MIME::Base64;
 
+=for markdown [![Build Status](https://travis-ci.org/gempesaw/Selenium-Screenshot.svg?branch=master)](https://travis-ci.org/gempesaw/Selenium-Screenshot)
+
 =head1 SYNOPSIS
 
     my $driver = Selenium::Remote::Driver->new;
