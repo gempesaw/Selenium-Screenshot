@@ -1,6 +1,6 @@
 # NAME
 
-Selenium::Screenshot - Compare and contrast screenshots in PNG format
+Selenium::Screenshot - Compare and contrast Webdriver screenshots in PNG format
 
 # INSTALLATION
 
@@ -72,7 +72,7 @@ you invoke the ["screenshot" in Selenium::Remote::Driver](https://metacpan.org/p
 ## folder
 
 OPTIONAL - a string where you'd like to save the screenshots on your
-local machine. It will be ["abs\_path" in Cwd](https://metacpan.org/pod/Cwd#abs_path)'d and we'll try to save
+local machine. It will be run through ["abs\_path" in Cwd](https://metacpan.org/pod/Cwd#abs_path) and we'll try to save
 there.
 
 ## metadata
@@ -97,14 +97,15 @@ regex-substituted by '-' in the filename.
 
 OPTIONAL - set the threshold at which images should be considered the
 same. The range is from 0 to 100; for comparison, these two images are
-N percent different, and these two images are N percent different.
+N percent different, and these two images are N percent different. The
+default threshold is 5 out of 100.
 
 # METHODS
 
 ## compare
 
 `compare` requires one argument: the filename of a PNG to compare
-against. It must be the exact same size as the png you passed in to
+against. It must be the exact same size as the PNG you passed in to
 this instance of Screenshot. It returns a boolean as to whether the
 images meet your ["threshold"](#threshold) for similarity.
 
@@ -112,7 +113,7 @@ images meet your ["threshold"](#threshold) for similarity.
 
 `difference` requires one argument: the filename of a PNG to compare
 against. Like ["compare"](#compare), the other file must contain a PNG of the
-exact same size as the png you passed into this instance of
+exact same size as the PNG you passed into this instance of
 screenshot. Note that for larger images, this method will take
 noticeably long to resolve.
 
