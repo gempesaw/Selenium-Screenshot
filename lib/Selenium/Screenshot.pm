@@ -1,0 +1,199 @@
+package Selenium::Screenshot;
+
+# ABSTRACT: Compare and contrast screenshots in PNG format
+use Moo;
+use Image::Compare;
+use Imager qw/:handy/;
+use Imager::Fountain;
+use Carp qw/croak carp/;
+use Cwd qw/abs_path/;
+use MIME::Base64;
+
+=attr png
+
+REQUIRED - A base64 encoded string representation of a png. For
+example, the string that the Selenium Webdriver server returns when
+you invoke the L<Selenium::Remote::Driver/screenshot> method.
+
+=cut
+
+has png => (
+    is => 'ro',
+    coerce => sub {
+        my ($encoded_png) = @_;
+
+        return decode_base64($encoded_png);
+    },
+    required => 1
+);
+
+=attr folder
+
+OPTIONAL - a string where you'd like to save the screenshots on your
+local machine. It will be L<Cwd/abs_path>'d and we'll try to save
+there.
+
+=cut
+
+has folder => (
+    is => 'rw',
+    coerce => sub {
+        my ($folder) = @_;
+        $folder //= 'screenshots/';
+        mkdir $folder unless -d $folder;
+
+        return abs_path($folder) . '/';
+    },
+    default => sub { 'screenshots/' }
+);
+
+=attr metadata
+
+OPTIONAL - provide a HASHREF of any additional data you'd like to use
+in the filename. They'll be appended together in the filename of this
+screenshot. Rudimentary sanitization is applied to the values of the
+hashref, but it's not very clever and is probably easily subverted -
+characters besides letters, numbers, dashes, and periods are
+regex-substituted by '-' in the filename.
+
+    my $screenshot = Selenium::Screenshot->new(
+        png => $encoded,
+        metadata => {
+            url     => 'http://fake.url.com',
+            build   => 'random-12347102.238402-build',
+            browser => 'firefox'
+        }
+    );
+
+=cut
+
+has metadata => (
+    is => 'ro',
+    lazy => 1,
+    default => sub { '' },
+    predicate => 'has_metadata'
+);
+
+=attr threshold
+
+OPTIONAL - set the threshold at which images should be considered the
+same. The range is from 0 to 100; for comparison, these two images are
+N percent different, and these two images are N percent different.
+
+=cut
+
+has threshold => (
+    is => 'ro',
+    lazy => 1,
+    default => sub { 5 }
+);
+
+has _cmp => (
+    is => 'ro',
+    lazy => 1,
+    init_arg => undef,
+    builder => sub {
+        my ($self) = @_;
+        my $cmp = Image::Compare->new;
+        $cmp->set_image1(
+            img => $self->filename,
+            type => 'png'
+        );
+
+        return $cmp;
+    }
+);
+
+sub compare {
+    my ($self, $opponent) = @_;
+
+    $self->save;
+    $self->_cmp->set_image2( img => $opponent );
+
+    $self->_cmp->set_method(
+        method => &Image::Compare::AVG_THRESHOLD,
+        args   => {
+            type  => &Image::Compare::AVG_THRESHOLD::MEAN,
+            value => $self->threshold,
+        }
+    );
+
+    return $self->_cmp->compare;
+}
+
+sub difference {
+    my ($self, $opponent) = @_;
+
+    $self->_cmp->set_image2(
+        img => $opponent
+    );
+
+    $self->_cmp->set_method(
+        method => &Image::Compare::IMAGE,
+        args => Imager::Fountain->simple(
+            positions => [              0.0,            1.0],
+            colors    => [NC(255, 255, 255), NC(240,18,190)]
+        )
+    );
+
+    my $name = $self->filename('diff');
+    my $diff = $self->_cmp->compare;
+    $diff->write( file => $name );
+    return $name;
+}
+
+
+=method save
+
+Persist your screenshot to disk. Without any arguments, we'll try to
+build a filename from your metadata if you provided any, and the
+timestamp if you didn't provide any metadata. You probably want to
+provide metadata; timestamps aren't very evocative.
+
+=cut
+
+sub save {
+    my ($self) = @_;
+
+    my $filename = $self->filename;
+    open (my $fh, '>', $filename) or croak 'Couldn\'t open ' . $filename . ' for writing: ' . $!;
+    binmode $fh;
+    print $fh $self->png;
+    close ($fh);
+
+    return $filename;
+}
+
+=method filename
+
+Get the filename that we constructed for this screenshot.
+
+=cut
+
+sub filename {
+    my ($self, $suffix) = @_;
+    $suffix = $suffix ? '-' . $suffix : '';
+
+    my @filename_parts;
+    if ($self->has_metadata) {
+        foreach (sort keys %{ $self->metadata }) {
+            push @filename_parts, $self->_sanitize_string($self->metadata->{$_});
+        }
+    }
+    else {
+        push @filename_parts, time
+    }
+
+    my $filename = $self->folder . join('-', @filename_parts) . $suffix . '.png';
+    $filename =~ s/\-+/-/g;
+    return $filename;
+}
+
+sub _sanitize_string {
+    my ($self, $dirty_string) = @_;
+
+    $dirty_string =~ s/[^A-z0-9\.\-]/-/g;
+    return $dirty_string;
+}
+
+1;
