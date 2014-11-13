@@ -2,6 +2,8 @@
 
 Selenium::Screenshot - Compare and contrast Webdriver screenshots in PNG format
 
+[![Build Status](https://travis-ci.org/gempesaw/Selenium-Screenshot.svg?branch=master)](https://travis-ci.org/gempesaw/Selenium-Screenshot)
+
 # INSTALLATION
 
 This module depends on [Image::Compare](https://metacpan.org/pod/Image::Compare) for comparison, and
@@ -18,7 +20,7 @@ page](http://ethan.tira-thompson.com/Mac_OS_X_Ports.html) may help.
 
 # VERSION
 
-version 0.001
+version 0.002
 
 # SYNOPSIS
 
