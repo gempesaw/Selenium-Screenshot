@@ -20,7 +20,7 @@ page](http://ethan.tira-thompson.com/Mac_OS_X_Ports.html) may help.
 
 # VERSION
 
-version 0.002
+version 0.02
 
 # SYNOPSIS
 
@@ -129,9 +129,55 @@ build a filename from your metadata if you provided any, and the
 timestamp if you didn't provide any metadata. You probably want to
 provide metadata; timestamps aren't very evocative.
 
+By passing a hash to ["save"](#save), you can alter the filename - any
+arguments passed here will be sorted by key and added to the filename
+along with the metadata you passed in on instantiation. NB: the
+arguments here will shadow the values passed in for metadata, so you
+can override any/all of the metadata keys if you so wish.
+
+    Selenium::Screenshot->new(
+        png => $driver->screenshot,
+        metadata => {
+            key => 'value'
+        }
+    )->save; # screenshots/value.png
+
+    Selenium::Screenshot->new(
+        png => $driver->screenshot,
+        metadata => {
+            key => 'value'
+        }
+    )->save(key => 'override'); # screenshots/override.png
+
 ## filename
 
-Get the filename that we constructed for this screenshot.
+Get the filename that we constructed for this screenshot. If you
+passed in a HASHREF to metadata in the constructor, we'll sort that by
+key and concatenate the parts into the filename. If there's no
+metadata, we'll use a timestamp for the filename.
+
+If you pass in a HASH as an argument, it will be combined with the
+metadata and override/shadow any keys that match.
+
+    Selenium::Screenshot->new(
+        png => $driver->screenshot
+    )->filename; # screenshots/203523252.png
+
+    Selenium::Screenshot->new(
+        png => $driver->screenshot,
+        metadata => {
+            key => 'value'
+        }
+    )->filename; # screenshots/value.png
+
+    Selenium::Screenshot->new(
+        png => $driver->screenshot,
+        metadata => {
+            key => 'value'
+        }
+    )->filename(
+        key => 'shadow'
+    ); # screenshots/shadow.png
 
 # SEE ALSO
 
