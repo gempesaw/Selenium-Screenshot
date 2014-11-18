@@ -69,7 +69,6 @@ METADATA: {
     ok($filename =~ /firefox/, 'meta data is used in filename');
 }
 
-
 DIRTY_STRINGS: {
     my %tests = (
         'pass-through.123'                => 'pass-through.123',

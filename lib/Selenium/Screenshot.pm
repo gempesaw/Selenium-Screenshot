@@ -241,13 +241,34 @@ build a filename from your metadata if you provided any, and the
 timestamp if you didn't provide any metadata. You probably want to
 provide metadata; timestamps aren't very evocative.
 
+By passing a hash to L</save>, you can alter the filename - any
+arguments passed here will be sorted by key and added to the filename
+along with the metadata you passed in on instantiation. NB: the
+arguments here will shadow the values passed in for metadata, so you
+can override any/all of the metadata keys if you so wish.
+
+    Selenium::Screenshot->new(
+        png => $driver->screenshot,
+        metadata => {
+            key => 'value'
+        }
+    )->save; # screenshots/value.png
+
+    Selenium::Screenshot->new(
+        png => $driver->screenshot,
+        metadata => {
+            key => 'value'
+        }
+    )->save(key => 'override'); # screenshots/override.png
+
 =cut
 
 sub save {
-    my ($self) = @_;
+    my ($self, %overrides) = @_;
 
-    my $filename = $self->filename;
-    open (my $fh, '>', $filename) or croak 'Couldn\'t open ' . $filename . ' for writing: ' . $!;
+    my $filename = $self->filename(%overrides);
+    open (my $fh, '>', $filename)
+      or croak 'Couldn\'t open ' . $filename . ' for writing: ' . $!;
     binmode $fh;
     print $fh $self->png;
     close ($fh);
