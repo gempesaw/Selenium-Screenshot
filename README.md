@@ -74,8 +74,9 @@ you invoke the ["screenshot" in Selenium::Remote::Driver](https://metacpan.org/p
 ## folder
 
 OPTIONAL - a string where you'd like to save the screenshots on your
-local machine. It will be run through ["abs\_path" in Cwd](https://metacpan.org/pod/Cwd#abs_path) and we'll try to save
-there.
+local machine. It will be run through ["abs\_path" in Cwd](https://metacpan.org/pod/Cwd#abs_path) and we'll try to
+save there. If you don't pass anything and you invoke ["save"](#save), we'll
+try to save in `($pwd)/screenshots/*`, wherever that may be.
 
 ## metadata
 
@@ -124,10 +125,10 @@ The difference image is scaled from white for no change to fuschia for
 
 ## save
 
-Persist your screenshot to disk. Without any arguments, we'll try to
-build a filename from your metadata if you provided any, and the
-timestamp if you didn't provide any metadata. You probably want to
-provide metadata; timestamps aren't very evocative.
+    Persist your screenshot to disk. Without any arguments, we'll try to
+  build a filename from your metadata if you provided any, and the
+  timestamp if you didn't provide any metadata. You probably want to
+  provide metadata; timestamps aren't very evocative.
 
 By passing a hash to ["save"](#save), you can alter the filename - any
 arguments passed here will be sorted by key and added to the filename
