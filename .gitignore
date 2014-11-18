@@ -1,2 +1,5 @@
 /.build/
 /Selenium-Screenshot-*
+/examples/screenshots/*
+/examples/screenshots/blue-stage-http-www.google.com.png
+/examples/screenshots/blue-stage-http-www.google.com.png
