@@ -87,8 +87,9 @@ has png => (
 =attr folder
 
 OPTIONAL - a string where you'd like to save the screenshots on your
-local machine. It will be run through L<Cwd/abs_path> and we'll try to save
-there.
+local machine. It will be run through L<Cwd/abs_path> and we'll try to
+save there. If you don't pass anything and you invoke L</save>, we'll
+try to save in C<($pwd)/screenshots/*>, wherever that may be.
 
 =cut
 
@@ -227,6 +228,16 @@ sub difference {
         )
     );
 
+
+    my $name = $self->diff_filename;
+    my $diff = $self->_cmp->compare;
+    $diff->write( file => $name );
+    return $name;
+}
+
+sub diff_filename {
+    my ($self) = @_;
+
     # we'd like to suffix "diff" on to the filename to separate the
     # diff files from the normal files. But, since we're sorting the
     # keys of our metadata, we need to be a little clever about naming
@@ -237,16 +248,13 @@ sub difference {
         my $last_key = pop @keys;
         $suffix = 'z' . $last_key;
     }
-    my $name = $self->filename($suffix => 'diff');
-    my $diff = $self->_cmp->compare;
-    $diff->write( file => $name );
-    return $name;
-}
 
+    return $self->filename($suffix => 'diff');
+}
 
 =method save
 
-Persist your screenshot to disk. Without any arguments, we'll try to
+  Persist your screenshot to disk. Without any arguments, we'll try to
 build a filename from your metadata if you provided any, and the
 timestamp if you didn't provide any metadata. You probably want to
 provide metadata; timestamps aren't very evocative.
