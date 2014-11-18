@@ -257,25 +257,55 @@ sub save {
 
 =method filename
 
-Get the filename that we constructed for this screenshot.
+Get the filename that we constructed for this screenshot. If you
+passed in a HASHREF to metadata in the constructor, we'll sort that by
+key and concatenate the parts into the filename. If there's no
+metadata, we'll use a timestamp for the filename.
+
+If you pass in a HASH as an argument, it will be combined with the
+metadata and override/shadow any keys that match.
+
+    Selenium::Screenshot->new(
+        png => $driver->screenshot
+    )->filename; # screenshots/203523252.png
+
+    Selenium::Screenshot->new(
+        png => $driver->screenshot,
+        metadata => {
+            key => 'value'
+        }
+    )->filename; # screenshots/value.png
+
+    Selenium::Screenshot->new(
+        png => $driver->screenshot,
+        metadata => {
+            key => 'value'
+        }
+    )->filename(
+        key => 'shadow'
+    ); # screenshots/shadow.png
 
 =cut
 
 sub filename {
-    my ($self, $suffix) = @_;
-    $suffix = $suffix ? '-' . $suffix : '';
+    my ($self, %overrides) = @_;
 
     my @filename_parts;
-    if ($self->has_metadata) {
-        foreach (sort keys %{ $self->metadata }) {
-            push @filename_parts, $self->_sanitize_string($self->metadata->{$_});
+    if ($self->has_metadata or %overrides) {
+        my $metadata = {
+            %{ $self->metadata},
+            %overrides
+        };
+
+        foreach (sort keys %{ $metadata }) {
+            push @filename_parts, $self->_sanitize_string($metadata->{$_});
         }
     }
     else {
         push @filename_parts, time
     }
 
-    my $filename = $self->folder . join('-', @filename_parts) . $suffix . '.png';
+    my $filename = $self->folder . join('-', @filename_parts) . '.png';
     $filename =~ s/\-+/-/g;
     return $filename;
 }
