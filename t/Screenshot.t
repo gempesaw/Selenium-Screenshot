@@ -93,7 +93,8 @@ COMPARE: {
     my $screenshot = Selenium::Screenshot->new(
         png => encode_base64($png_string),
         metadata => {
-            test => 'compare'
+            test => 'compare',
+            and  => 'diff'
         }
     );
 
@@ -106,7 +107,7 @@ COMPARE: {
         # get the difference file
         my $diff_file = $screenshot->difference($different);
         ok( -e $diff_file, 'diff file exists' );
-        ok( $diff_file =~ /-diff\.png/, 'diff is named differently' );
+        cmp_ok( $diff_file, '=~', qr/-diff\.png/, 'diff is named differently' );
     }
 }
 

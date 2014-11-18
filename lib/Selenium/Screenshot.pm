@@ -227,7 +227,17 @@ sub difference {
         )
     );
 
-    my $name = $self->filename('diff');
+    # we'd like to suffix "diff" on to the filename to separate the
+    # diff files from the normal files. But, since we're sorting the
+    # keys of our metadata, we need to be a little clever about naming
+    # the key of what we're passing to ->filename.
+    my $suffix = 'suffix';
+    if ($self->has_metadata) {
+        my @keys = sort keys %{ $self->metadata };
+        my $last_key = pop @keys;
+        $suffix = 'z' . $last_key;
+    }
+    my $name = $self->filename($suffix => 'diff');
     my $diff = $self->_cmp->compare;
     $diff->write( file => $name );
     return $name;
