@@ -23,13 +23,6 @@ my $basic_args = {
 };
 my $screenshot = Selenium::Screenshot->new(%$basic_args);
 
-SAVING: {
-    my $res = $screenshot->save;
-    ok($res, 'can save a screenshot');
-    ok(-e $screenshot->filename, 'and it actually exists');
-    ok($screenshot->filename =~ /screenshots/, 'where we expect it to');
-}
-
 FILENAME: {
     my $timestamp = Selenium::Screenshot->new(
         %$basic_args
@@ -63,7 +56,7 @@ METADATA: {
         browser => 'firefox'
     };
     my $meta_shot = Selenium::Screenshot->new(%$meta_args);
-    my $filename = $meta_shot->save;
+    my $filename = $meta_shot->filename;
     ok($filename =~ /fake.url/, 'meta data is used in filename');
     ok($filename =~ /random\-1234/, 'meta data is used in filename');
     ok($filename =~ /firefox/, 'meta data is used in filename');

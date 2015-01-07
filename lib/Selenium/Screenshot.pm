@@ -29,14 +29,9 @@ use MIME::Base64;
     $driver->execute_script('document.getElementsByTagName("body")[0].style.backgroundColor = "blue"');
 
     # Take another screenshot
-    my $blue_file = Selenium::Screenshot->new(
-        png => $driver->screenshot,
-        metadata => {
-            build => 'stage',
-            bg => 'blue',
-            url => 'http://www.google.com'
-        }
-    )->save;
+    my $blue = Selenium::Screenshot->new(
+        png => $driver->screenshot
+    );
 
     unless ($orig->compare($blue_file)) {
         my $diff_file = $orig->difference($blue_file);
@@ -185,7 +180,6 @@ sub compare {
     my ($self, $opponent) = @_;
     die 'Don\'t know what to compare with' unless $opponent;
 
-    $self->save;
     $self->_cmp->set_image2( img => $opponent );
 
     $self->_cmp->set_method(
@@ -250,48 +244,6 @@ sub diff_filename {
     }
 
     return $self->filename($suffix => 'diff');
-}
-
-=method save
-
-  Persist your screenshot to disk. Without any arguments, we'll try to
-build a filename from your metadata if you provided any, and the
-timestamp if you didn't provide any metadata. You probably want to
-provide metadata; timestamps aren't very evocative.
-
-By passing a hash to L</save>, you can alter the filename - any
-arguments passed here will be sorted by key and added to the filename
-along with the metadata you passed in on instantiation. NB: the
-arguments here will shadow the values passed in for metadata, so you
-can override any/all of the metadata keys if you so wish.
-
-    Selenium::Screenshot->new(
-        png => $driver->screenshot,
-        metadata => {
-            key => 'value'
-        }
-    )->save; # screenshots/value.png
-
-    Selenium::Screenshot->new(
-        png => $driver->screenshot,
-        metadata => {
-            key => 'value'
-        }
-    )->save(key => 'override'); # screenshots/override.png
-
-=cut
-
-sub save {
-    my ($self, %overrides) = @_;
-
-    my $filename = $self->filename(%overrides);
-    open (my $fh, '>', $filename)
-      or croak 'Couldn\'t open ' . $filename . ' for writing: ' . $!;
-    binmode $fh;
-    print $fh $self->png;
-    close ($fh);
-
-    return $filename;
 }
 
 =method filename
