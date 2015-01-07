@@ -68,7 +68,10 @@ page|http://ethan.tira-thompson.com/Mac_OS_X_Ports.html> may help.
 
 REQUIRED - A base64 encoded string representation of a png. For
 example, the string that the Selenium Webdriver server returns when
-you invoke the L<Selenium::Remote::Driver/screenshot> method.
+you invoke the L<Selenium::Remote::Driver/screenshot> method. After
+being passed to our constructor, this will be automatically
+instantiated into an Imager object: that is, C<< $screenshot->png >>
+will return an Imager object.
 
 =cut
 
@@ -77,7 +80,8 @@ has png => (
     coerce => sub {
         my ($encoded_png) = @_;
 
-        return decode_base64($encoded_png);
+        my $data = decode_base64($encoded_png);
+        return Imager->new(data => $data);
     },
     required => 1
 );
@@ -162,7 +166,7 @@ has _cmp => (
         my ($self) = @_;
         my $cmp = Image::Compare->new;
         $cmp->set_image1(
-            img => $self->filename,
+            img => $self->png,
             type => 'png'
         );
 
