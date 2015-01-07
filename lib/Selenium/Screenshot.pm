@@ -111,6 +111,54 @@ try to save in C<($pwd)/screenshots/>, wherever that may be.
 
 =cut
 
+=attr exclude
+
+Handle dynamic parts of your website by specify areas of the
+screenshot to black out before comparison. We're working on
+simplifying this data structure as much as possible, but it's a bit
+complicated to handle the output of the functions from
+Selenium::Remote::WebElement. If you have WebElements already found
+and instantiated, you can do:
+
+    my $elem = $driver->find_element('div', 'css');
+    Selenium::Screenshot->new(
+        png => $driver->screenshot,
+        exclude => [{
+            size => $elem->get_size,
+            location  => $elem->get_element_location
+        }]
+    );
+
+To construct the exclusions by hand, you can do:
+
+    Selenium::Screenshot->new(
+        png => $driver->screenshot,
+        exclude => [{
+            size     => { width => 10, height => 10 }
+            location => { x => 5, y => 5 },
+        }]
+    );
+
+This would black out a 10x10 box with its top left corner 5 pixels
+from the top edge and 5 pixels from the left edge of the image.
+
+=cut
+
+has exclude => (
+    is => 'ro',
+    lazy => 1,
+    default => sub { [ ] },
+    coerce => sub {
+        my ($exclude) = @_;
+
+        foreach my $rect (@{ $exclude }) {
+            croak 'Each exclude region must have size and location keys.'
+              unless exists $rect->{size} and exists $rect->{location};
+        }
+    },
+    predicate => 1
+);
+
 has folder => (
     is => 'rw',
     coerce => sub {
@@ -339,6 +387,44 @@ sub filename {
     my $filename = $self->folder . join('-', @filename_parts) . '.png';
     $filename =~ s/\-+/-/g;
     return $filename;
+}
+
+sub _img_exclude {
+    my ($self, $img, $exclude) = @_;
+    $exclude //= $self->exclude;
+
+    foreach my $rect (@{ $exclude }) {
+        my ($size, $loc) = ($rect->{size}, $rect->{location});
+
+        # skip items that don't have the valid keys
+        unless (exists $loc->{x}
+                && exists $loc->{y}
+                && exists $size->{width}
+                && exists $size->{height}) {
+            next;
+        }
+
+        my $top_left = {
+            x => $loc->{x},
+            y => $loc->{y}
+        };
+
+        my $bottom_right = {
+            x => $loc->{x} + $size->{width},
+            y => $loc->{y} + $size->{height}
+        };
+
+        $img->box(
+            xmin => $top_left->{x},
+            ymin => $top_left->{y},
+            xmax => $bottom_right->{x},
+            ymax => $bottom_right->{y},
+            filled => 1,
+            color => 'black'
+        );
+    }
+
+    return $img;
 }
 
 sub _sanitize_string {
