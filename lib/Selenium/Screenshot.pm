@@ -68,12 +68,20 @@ will return an Imager object.
 =cut
 
 has png => (
-    is => 'ro',
+    is => 'rwp',
+    lazy => 1,
     coerce => sub {
-        my ($encoded_png) = @_;
+        my ($png_or_image) = @_;
 
-        my $data = decode_base64($encoded_png);
-        return Imager->new(data => $data);
+        # We are prepared to handle an Imager object, or a base64
+        # encoded png.
+        if ( blessed( $png_or_image ) && $png_or_image) {
+            return $png_or_image;
+        }
+        else {
+            my $data = decode_base64($png_or_image);
+            return Imager->new(data => $data);
+        }
     },
     required => 1
 );
@@ -153,8 +161,10 @@ has exclude => (
 
         foreach my $rect (@{ $exclude }) {
             croak 'Each exclude region must have size and location keys.'
-              unless exists $rect->{size} and exists $rect->{location};
+              unless exists $rect->{size} && exists $rect->{location};
         }
+
+        return $exclude;
     },
     predicate => 1
 );
@@ -205,6 +215,12 @@ has _cmp => (
     builder => sub {
         my ($self) = @_;
         my $cmp = Image::Compare->new;
+
+        if ($self->has_exclude) {
+            my $png = $self->_img_exclude($self->png);
+            $self->_set_png($png);
+        }
+
         $cmp->set_image1(
             img => $self->png,
             type => 'png'
@@ -226,9 +242,7 @@ similarity.
 
 sub compare {
     my ($self, $opponent) = @_;
-    $opponent = $self->_extract_image($opponent);
-
-    $self->_cmp->set_image2( img => $opponent );
+    $self->_set_opponent($opponent);
 
     $self->_cmp->set_method(
         method => &Image::Compare::AVG_THRESHOLD,
@@ -263,9 +277,7 @@ image is computed via the metadata provided during instantiation, with
 
 sub difference {
     my ($self, $opponent) = @_;
-    $opponent = $self->_extract_image($opponent);
-
-    $self->_cmp->set_image2(img => $opponent);
+    $opponent = $self->_set_opponent($opponent);
 
     # We want to range from transparent (no difference) to fuschia at
     # 100% change.
@@ -321,6 +333,16 @@ sub _diff_filename {
     }
 
     return $self->filename($suffix => 'diff');
+}
+
+sub _set_opponent {
+    my ($self, $opponent) = @_;
+
+    $opponent = $self->_extract_image($opponent);
+    $opponent = $self->_img_exclude($opponent);
+    $self->_cmp->set_image2( img => $opponent );
+
+    return $opponent;
 }
 
 =method filename
@@ -393,6 +415,8 @@ sub _img_exclude {
     my ($self, $img, $exclude) = @_;
     $exclude //= $self->exclude;
 
+    my $copy = $img->copy;
+
     foreach my $rect (@{ $exclude }) {
         my ($size, $loc) = ($rect->{size}, $rect->{location});
 
@@ -414,7 +438,7 @@ sub _img_exclude {
             y => $loc->{y} + $size->{height}
         };
 
-        $img->box(
+        $copy->box(
             xmin => $top_left->{x},
             ymin => $top_left->{y},
             xmax => $bottom_right->{x},
@@ -424,7 +448,7 @@ sub _img_exclude {
         );
     }
 
-    return $img;
+    return $copy;
 }
 
 sub _sanitize_string {

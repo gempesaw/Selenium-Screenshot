@@ -141,6 +141,33 @@ WITH_REAL_PNG: {
 
         $copy = Selenium::Screenshot->_img_exclude($copy, $exclude);
         $cmp->set_image2(img => $copy, type => 'PNG');
+      E2E: {
+            my $exclude = [{
+                size => { width => 16, height => 16 },
+                location => { x => 0, y => 0 }
+            }];
+
+            my $exclude_shot = Selenium::Screenshot->new(
+                png => $png_string,
+                exclude => $exclude
+            );
+
+            my $copy = $screenshot->png;
+            ok( $exclude_shot->compare($screenshot), 'we automatically exclude the opponent as well');
+            ok( $screenshot->compare($copy), 'without mutating the opponent');
+
+            # The exclusion is done during the construction of the
+            # _cmp attribute of Selenium::Screenshot. While it is
+            # implicitly called behind the scenes automatically by
+            # compare, it needs to be lazy due to its dependencies. If
+            # you need to move this section above the
+            # $exclude_shot->compare invocation, you must manually
+            # instantiate $exclude_shot->_cmp.
+            my $cmp = Image::Compare->new(method => &Image::Compare::EXACT);
+            $cmp->set_image1(type => 'PNG', img => $exclude_shot->png );
+            $cmp->set_image2(type => 'PNG', img => $screenshot->png );
+            ok( ! $cmp->compare, 'having an exclusion in the constructor mutates its own png');
+        }
 
         ok( $cmp->compare, 'excluding two images makes them the same' );
     }
