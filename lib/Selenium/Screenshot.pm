@@ -4,6 +4,7 @@ package Selenium::Screenshot;
 use Moo;
 use Image::Compare;
 use Imager qw/:handy/;
+use Imager::Color;
 use Imager::Fountain;
 use Carp qw/croak carp/;
 use Cwd qw/abs_path/;
@@ -52,9 +53,10 @@ impacted other parts of your web app.
 
 This module depends on L<Image::Compare> for comparison, and
 L<Imager::File::PNG> for PNG support. The latter depends on
-C<libpng-devel>; consult your local googles on how to get the
-appropriate libraries installed on your system. The following commands
-may be of aid on linux systems, or they may not help at all:
+C<libpng-devel>; consult <Image::Install>'s documentation and/or your
+local googles on how to get the appropriate libraries installed on
+your system. The following commands may be of aid on linux systems, or
+they may not help at all:
 
     sudo apt-get install libpng-dev
     sudo yum install libpng-devel
@@ -211,16 +213,20 @@ sub difference {
     my ($self, $opponent) = @_;
     $opponent = $self->_extract_image($opponent);
 
-    $self->_cmp->set_image2(
-        img => $opponent
+    $self->_cmp->set_image2(img => $opponent);
+
+    # We want to range from transparent (no difference) to fuschia at
+    # 100% change.
+    my $white = Imager::Color->new(255, 255, 255);
+    my $fuschia = Imager::Color->new(240,  18, 190);
+    my $scale = Imager::Fountain->simple(
+        positions => [    0.0,      1.0 ],
+        colors    => [ $white, $fuschia ]
     );
 
     $self->_cmp->set_method(
         method => &Image::Compare::IMAGE,
-        args => Imager::Fountain->simple(
-            positions => [              0.0,            1.0],
-            colors    => [NC(255, 255, 255), NC(240,18,190)]
-        )
+        args => $scale
     );
 
 
