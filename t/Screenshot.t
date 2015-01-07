@@ -121,26 +121,31 @@ WITH_REAL_PNG: {
     }
 
   EXCLUDE: {
-        my $exclude = [{
-            size     => { width => 8, height => 8 },
-            location => { x => 4, y => 4 }
-        }, {
-            size     => { width => 1, height => 1 },
-            location => { x => 0, y => 0 }
-        }];
+      UNIT: {
+            my $exclude = [{
+                size     => { width => 8, height => 8 },
+                location => { x => 4, y => 4 }
+            }, {
+                size     => { width => 1, height => 1 },
+                location => { x => 0, y => 0 }
+            }];
 
-        my $img = Imager->new(file => $sample_png);
-        my $copy = $img->copy;
+            my $img = Imager->new(file => $sample_png);
+            my $copy = $img->copy;
 
-        $img = Selenium::Screenshot->_img_exclude($img, $exclude);
+            $img = Selenium::Screenshot->_img_exclude($img, $exclude);
 
-        my $cmp = Image::Compare->new(method => &Image::Compare::EXACT);
-        $cmp->set_image1(img => $img, type => 'PNG');
-        $cmp->set_image2(img => $copy, type => 'PNG');
-        ok( ! $cmp->compare, 'exclusion makes images different' );
+            my $cmp = Image::Compare->new(method => &Image::Compare::EXACT);
+            $cmp->set_image1(img => $img, type => 'PNG');
+            $cmp->set_image2(img => $copy, type => 'PNG');
+            ok( ! $cmp->compare, 'exclusion makes images different' );
 
-        $copy = Selenium::Screenshot->_img_exclude($copy, $exclude);
-        $cmp->set_image2(img => $copy, type => 'PNG');
+            $copy = Selenium::Screenshot->_img_exclude($copy, $exclude);
+            $cmp->set_image2(img => $copy, type => 'PNG');
+
+            ok( $cmp->compare, 'excluding two images makes them the same' );
+        }
+
       E2E: {
             my $exclude = [{
                 size => { width => 16, height => 16 },
@@ -169,7 +174,6 @@ WITH_REAL_PNG: {
             ok( ! $cmp->compare, 'having an exclusion in the constructor mutates its own png');
         }
 
-        ok( $cmp->compare, 'excluding two images makes them the same' );
     }
 }
 
