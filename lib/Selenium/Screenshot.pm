@@ -16,27 +16,19 @@ use Scalar::Util qw/blessed/;
 =head1 SYNOPSIS
 
     my $driver = Selenium::Remote::Driver->new;
+    $driver->set_window_size(320, 480);
     $driver->get('http://www.google.com/404');
 
-    my $orig = Selenium::Screenshot->new(
-        png => $driver->screenshot,
-        metadata => {
-            build => 'prod',
-            browser => 'firefox',
-            'any metadata' => 'you might like'
-        }
-    );
+    my $white = Selenium::Screenshot->new(png => $driver->screenshot);
 
     # Alter the page by turning the background blue
     $driver->execute_script('document.getElementsByTagName("body")[0].style.backgroundColor = "blue"');
 
     # Take another screenshot
-    my $blue = Selenium::Screenshot->new(
-        png => $driver->screenshot
-    );
+    my $blue = Selenium::Screenshot->new(png => $driver->screenshot);
 
-    unless ($orig->compare($blue_file)) {
-        my $diff_file = $orig->difference($blue_file);
+    unless ($white->compare($blue)) {
+        my $diff_file = $white->difference($blue);
         print 'The images differ; see ' . $diff_file . ' for details';
     }
 
@@ -115,7 +107,7 @@ has threshold => (
 OPTIONAL - a string where you'd like to save the screenshots on your
 local machine. It will be run through L<Cwd/abs_path> and we'll try to
 save there. If you don't pass anything and you invoke L</save>, we'll
-try to save in C<($pwd)/screenshots/*>, wherever that may be.
+try to save in C<($pwd)/screenshots/>, wherever that may be.
 
 =cut
 
@@ -176,10 +168,11 @@ has _cmp => (
 
 =method compare
 
-C<compare> requires one argument: the filename of a PNG to compare
-against. It must be the exact same size as the PNG you passed in to
-this instance of Screenshot. It returns a boolean as to whether the
-images meet your L</threshold> for similarity.
+C<compare> requires one argument: the filename, Imager object, or
+Selenium::Screenshot of a PNG to compare against. It must be the exact
+same size as the PNG you passed in to this instance of Screenshot. It
+returns a boolean as to whether the images meet your L</threshold> for
+similarity.
 
 =cut
 
@@ -202,14 +195,21 @@ sub compare {
 
 =method difference
 
-C<difference> requires one argument: the filename of a PNG to compare
-against. Like L</compare>, the other file must contain a PNG of the
-exact same size as the PNG you passed into this instance of
-screenshot. Note that for larger images, this method will take
-noticeably long to resolve.
+C<difference> requires one argument: the filename of a PNG, an Imager
+object, or a Selenium::Screenshot object instantiated from such a
+PNG. Like L</compare>, the opponent image MUST be a PNG of the exact
+same size as the PNG you passed into this instance of screenshot. Note
+that for larger images, this method will take noticeably longer to
+resolve.
 
-The difference image is scaled from white for no change to fuschia for
-100% change.
+This will return the filename to which the difference image has been
+saved - it will be a copy of the opponent image overlaid with the
+difference between the two images. The filename of the difference
+image is computed via the metadata provided during instantiation, with
+-diff suffixed as the final component.
+
+    my $diff_file = $screenshot->difference($oppoent);
+    `open $diff_file`;
 
 =cut
 
@@ -285,10 +285,13 @@ metadata, we'll use a timestamp for the filename.
 If you pass in a HASH as an argument, it will be combined with the
 metadata and override/shadow any keys that match.
 
+    # default behavior is to use the timestamp
     Selenium::Screenshot->new(
         png => $driver->screenshot
     )->filename; # screenshots/203523252.png
 
+    # providing any metadata uses that as the filename, and the basis
+    # for the diff filename
     Selenium::Screenshot->new(
         png => $driver->screenshot,
         metadata => {
@@ -296,6 +299,14 @@ metadata and override/shadow any keys that match.
         }
     )->filename; # screenshots/value.png
 
+    Selenium::Screenshot->new(
+        png => $driver->screenshot,
+        metadata => {
+            key => 'value'
+        }
+    )->difference($opponent); # screenshots/value-diff.png
+
+    # overriding the filename
     Selenium::Screenshot->new(
         png => $driver->screenshot,
         metadata => {
