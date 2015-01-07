@@ -82,6 +82,30 @@ has png => (
     required => 1
 );
 
+=attr threshold
+
+OPTIONAL - set the threshold at which images should be considered the
+same. The range is from 0 to 100; for comparison, these two images are
+N percent different, and these two images are N percent different. The
+default threshold is 5 out of 100.
+
+=cut
+
+# TODO: add threshold tests
+# TODO: provide reference images
+
+has threshold => (
+    is => 'ro',
+    lazy => 1,
+    coerce => sub {
+        my ($threshold) = @_;
+
+        my $scaling = 255 * sqrt(3) / 100;
+        return $threshold * $scaling;
+    },
+    default => sub { 5 }
+);
+
 =attr folder
 
 OPTIONAL - a string where you'd like to save the screenshots on your
@@ -126,32 +150,8 @@ regex-substituted by '-' in the filename.
 has metadata => (
     is => 'ro',
     lazy => 1,
-    default => sub { '' },
+    default => sub { {} },
     predicate => 'has_metadata'
-);
-
-=attr threshold
-
-OPTIONAL - set the threshold at which images should be considered the
-same. The range is from 0 to 100; for comparison, these two images are
-N percent different, and these two images are N percent different. The
-default threshold is 5 out of 100.
-
-=cut
-
-# TODO: add threshold tests
-# TODO: provide reference images
-
-has threshold => (
-    is => 'ro',
-    lazy => 1,
-    coerce => sub {
-        my ($threshold) = @_;
-
-        my $scaling = 255 * sqrt(3) / 100;
-        return $threshold * $scaling;
-    },
-    default => sub { 5 }
 );
 
 has _cmp => (
