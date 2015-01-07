@@ -460,8 +460,9 @@ sub _sanitize_string {
 
 sub _extract_image {
     my ($self, $file_or_image) = @_;
-    die 'Need something to compare to: a filename, Imager object, or Selenium::Screenshot object'
-      unless defined $file_or_image;
+
+    my $err_msg = 'We were expecting one of: a filename, Imager object, or Selenium::Screenshot object';
+    die $err_msg unless defined $file_or_image;
 
     if ( blessed( $file_or_image) ) {
         if ($file_or_image->isa('Selenium::Screenshot')) {
@@ -471,7 +472,7 @@ sub _extract_image {
             return $file_or_image;
         }
         else {
-            croak 'The opponent image needs to be a filename, Imager object, or Selenium::Screenshot object.' ;
+            croak $err_msg;
         }
     }
     else {
