@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use File::Copy;
 use FindBin;
+use Imager;
 use MIME::Base64;
 use Test::More;
 
@@ -76,31 +77,47 @@ DIRTY_STRINGS: {
     }
 }
 
-COMPARE: {
+WITH_REAL_PNG: {
+    # common setup
     my $sample_png = $FindBin::Bin . '/sample.png';
 
     open (my $image_fh, "<", $sample_png) or die 'cannot open: ' . $!;
-    my $png_string = do{ local $/ = undef; <$image_fh>; };
+    my $png_string = encode_base64( do{ local $/ = undef; <$image_fh>; } );
     close ($image_fh);
 
     my $screenshot = Selenium::Screenshot->new(
-        png => encode_base64($png_string),
+        png => $png_string,
         metadata => {
             test => 'compare',
             and  => 'diff'
         }
     );
-
-    ok($screenshot->compare($sample_png), 'comparing to self passes');
-
     my $different = $FindBin::Bin . '/sample-diff.png';
-    ok(!$screenshot->compare($different),
-       'comparing two different images fails!');
+
+  COMPARE: {
+        ok($screenshot->compare($sample_png), 'comparing to self passes');
+        ok(!$screenshot->compare($different), 'comparing two different images fails!');
+    }
+
   CONTRAST: {
         # get the difference file
         my $diff_file = $screenshot->difference($different);
         ok( -e $diff_file, 'diff file exists' );
         cmp_ok( $diff_file, '=~', qr/-diff\.png/, 'diff is named differently' );
+    }
+
+  CASTING: {
+        my $file = $FindBin::Bin . '/sample.png';
+        my $tests = {
+            file => $file,
+            imager => Imager->new(file => $file),
+            screenshot => Selenium::Screenshot->new(png => $png_string)
+        };
+
+        foreach my $type (keys %$tests) {
+            my $extracted = Selenium::Screenshot->_extract_image($tests->{$type});
+            ok($extracted->isa('Imager'), 'we can convert ' . $type . ' to Imager');
+        }
     }
 }
 

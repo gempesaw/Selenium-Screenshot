@@ -8,6 +8,7 @@ use Imager::Fountain;
 use Carp qw/croak carp/;
 use Cwd qw/abs_path/;
 use MIME::Base64;
+use Scalar::Util qw/blessed/;
 
 =for markdown [![Build Status](https://travis-ci.org/gempesaw/Selenium-Screenshot.svg?branch=master)](https://travis-ci.org/gempesaw/Selenium-Screenshot)
 
@@ -178,7 +179,7 @@ images meet your L</threshold> for similarity.
 
 sub compare {
     my ($self, $opponent) = @_;
-    die 'Don\'t know what to compare with' unless $opponent;
+    $opponent = $self->_extract_image($opponent);
 
     $self->_cmp->set_image2( img => $opponent );
 
@@ -208,7 +209,7 @@ The difference image is scaled from white for no change to fuschia for
 
 sub difference {
     my ($self, $opponent) = @_;
-    die 'Don\'t know what to compare with' unless $opponent;
+    $opponent = $self->_extract_image($opponent);
 
     $self->_cmp->set_image2(
         img => $opponent
@@ -306,6 +307,27 @@ sub _sanitize_string {
 
     $dirty_string =~ s/[^A-z0-9\.\-]/-/g;
     return $dirty_string;
+}
+
+sub _extract_image {
+    my ($self, $file_or_image) = @_;
+    die 'Need something to compare to: a filename, Imager object, or Selenium::Screenshot object'
+      unless defined $file_or_image;
+
+    if ( blessed( $file_or_image) ) {
+        if ($file_or_image->isa('Selenium::Screenshot')) {
+            return $file_or_image->png;
+        }
+        elsif ($file_or_image->isa('Imager')) {
+            return $file_or_image;
+        }
+        else {
+            croak 'The opponent image needs to be a filename, Imager object, or Selenium::Screenshot object.' ;
+        }
+    }
+    else {
+        return Imager->new(file => $file_or_image);
+    }
 }
 
 =head1 SEE ALSO
