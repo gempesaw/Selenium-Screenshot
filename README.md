@@ -76,6 +76,37 @@ local machine. It will be run through ["abs\_path" in Cwd](https://metacpan.org/
 save there. If you don't pass anything and you invoke ["save"](#save), we'll
 try to save in `($pwd)/screenshots/`, wherever that may be.
 
+## exclude
+
+Handle dynamic parts of your website by specify areas of the
+screenshot to black out before comparison. We're working on
+simplifying this data structure as much as possible, but it's a bit
+complicated to handle the output of the functions from
+Selenium::Remote::WebElement. If you have WebElements already found
+and instantiated, you can do:
+
+    my $elem = $driver->find_element('div', 'css');
+    Selenium::Screenshot->new(
+        png => $driver->screenshot,
+        exclude => [{
+            size => $elem->get_size,
+            location  => $elem->get_element_location
+        }]
+    );
+
+To construct the exclusions by hand, you can do:
+
+    Selenium::Screenshot->new(
+        png => $driver->screenshot,
+        exclude => [{
+            size     => { width => 10, height => 10 }
+            location => { x => 5, y => 5 },
+        }]
+    );
+
+This would black out a 10x10 box with its top left corner 5 pixels
+from the top edge and 5 pixels from the left edge of the image.
+
 ## metadata
 
 OPTIONAL - provide a HASHREF of any additional data you'd like to use
