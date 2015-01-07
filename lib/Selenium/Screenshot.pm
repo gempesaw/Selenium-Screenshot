@@ -229,14 +229,32 @@ sub difference {
         args => $scale
     );
 
-
-    my $name = $self->diff_filename;
+    # Do the actual pixel by pixel comparison. This can take a while.
     my $diff = $self->_cmp->compare;
-    $diff->write( file => $name );
+
+    # Post processing to overlay the difference onto the
+    # opponent. First, subtract a white box from our difference image;
+    # to make everything white transparent instead.
+    my $work = Imager->new(
+        xsize    => $diff->getwidth,
+        ysize    => $diff->getheight,
+        channels => $diff->getchannels
+    );
+    $work->box(filled => 1, color => $white );
+    $diff = $work->difference(other => $diff);
+
+    # Place the transparent diff image on top of our opponent -
+    # anything changed will show up on top of the opponent image in
+    # varying degrees of pink.
+    $opponent->compose(src => $diff);
+
+    my $name = $self->_diff_filename;
+    $opponent->write(file => $name);
+
     return $name;
 }
 
-sub diff_filename {
+sub _diff_filename {
     my ($self) = @_;
 
     # we'd like to suffix "diff" on to the filename to separate the
