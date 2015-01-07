@@ -45,7 +45,7 @@ impacted other parts of your web app.
 
 This module depends on L<Image::Compare> for comparison, and
 L<Imager::File::PNG> for PNG support. The latter depends on
-C<libpng-devel>; consult <Image::Install>'s documentation and/or your
+C<libpng-devel>; consult L<Image::Install>'s documentation and/or your
 local googles on how to get the appropriate libraries installed on
 your system. The following commands may be of aid on linux systems, or
 they may not help at all:
@@ -58,12 +58,15 @@ page|http://ethan.tira-thompson.com/Mac_OS_X_Ports.html> may help.
 
 =attr png
 
-REQUIRED - A base64 encoded string representation of a png. For
+REQUIRED - A base64 encoded string representation of a PNG. For
 example, the string that the Selenium Webdriver server returns when
 you invoke the L<Selenium::Remote::Driver/screenshot> method. After
 being passed to our constructor, this will be automatically
 instantiated into an Imager object: that is, C<< $screenshot->png >>
 will return an Imager object.
+
+If you are so inclined, you may also pass an Imager object instead of
+a base64 encoded PNG.
 
 =cut
 
@@ -84,6 +87,78 @@ has png => (
         }
     },
     required => 1
+);
+
+=attr exclude
+
+OPTIONAL - Handle dynamic parts of your website by specify areas of the
+screenshot to black out before comparison. We're working on
+simplifying this data structure as much as possible, but it's a bit
+complicated to handle the output of the functions from
+Selenium::Remote::WebElement. If you have WebElements already found
+and instantiated, you can do:
+
+    my $elem = $driver->find_element('div', 'css');
+    Selenium::Screenshot->new(
+        png => $driver->screenshot,
+        exclude => [{
+            size      => $elem->get_size,
+            location  => $elem->get_element_location
+        }]
+    );
+
+To construct the exclusions by hand, you can do:
+
+    Selenium::Screenshot->new(
+        png => $driver->screenshot,
+        exclude => [{
+            size     => { width => 10, height => 10 }
+            location => { x => 5, y => 5 },
+        }]
+    );
+
+This would black out a 10x10 box with its top left corner 5 pixels
+from the top edge and 5 pixels from the left edge of the image.
+
+You may pass more than one rectangle at a time.
+
+Unfortunately, while we would like to accept CSS selectors, it feels a
+bit wrong to have to obtain the element's size and location from this
+module, which would make a binding dependency on
+Selenium::Remote::WebElement's interface. Although this is more
+cumbersome, it's a cleaner separation. In case you need help
+generating your exclude data structure, the following map might help:
+
+    my @elems = $d->find_elements('p', 'css');
+    my @exclude = map {
+        my $rect = {
+            size => $_->get_size,
+            location => $_->get_element_location
+        };
+        $rect
+    } @elems;
+    my $s = Selenium::Screenshot->new(
+        png => $d->screenshot,
+        exclude => [ @exclude ],
+    );
+
+=cut
+
+has exclude => (
+    is => 'ro',
+    lazy => 1,
+    default => sub { [ ] },
+    coerce => sub {
+        my ($exclude) = @_;
+
+        foreach my $rect (@{ $exclude }) {
+            croak 'Each exclude region must have size and location keys.'
+              unless exists $rect->{size} && exists $rect->{location};
+        }
+
+        return $exclude;
+    },
+    predicate => 1
 );
 
 =attr threshold
@@ -118,56 +193,6 @@ save there. If you don't pass anything and you invoke L</save>, we'll
 try to save in C<($pwd)/screenshots/>, wherever that may be.
 
 =cut
-
-=attr exclude
-
-Handle dynamic parts of your website by specify areas of the
-screenshot to black out before comparison. We're working on
-simplifying this data structure as much as possible, but it's a bit
-complicated to handle the output of the functions from
-Selenium::Remote::WebElement. If you have WebElements already found
-and instantiated, you can do:
-
-    my $elem = $driver->find_element('div', 'css');
-    Selenium::Screenshot->new(
-        png => $driver->screenshot,
-        exclude => [{
-            size => $elem->get_size,
-            location  => $elem->get_element_location
-        }]
-    );
-
-To construct the exclusions by hand, you can do:
-
-    Selenium::Screenshot->new(
-        png => $driver->screenshot,
-        exclude => [{
-            size     => { width => 10, height => 10 }
-            location => { x => 5, y => 5 },
-        }]
-    );
-
-This would black out a 10x10 box with its top left corner 5 pixels
-from the top edge and 5 pixels from the left edge of the image.
-
-=cut
-
-has exclude => (
-    is => 'ro',
-    lazy => 1,
-    default => sub { [ ] },
-    coerce => sub {
-        my ($exclude) = @_;
-
-        foreach my $rect (@{ $exclude }) {
-            croak 'Each exclude region must have size and location keys.'
-              unless exists $rect->{size} && exists $rect->{location};
-        }
-
-        return $exclude;
-    },
-    predicate => 1
-);
 
 has folder => (
     is => 'rw',
@@ -414,7 +439,7 @@ sub filename {
 =method save
 
 Delegates to L<Imager/write>, which it uses to write to the filename
-as calculated by L</filename>. Like </filename>, you can pass in a
+as calculated by L</filename>. Like L</filename>, you can pass in a
 HASH of overrides to the filename if you'd like to customize it.
 
 =cut

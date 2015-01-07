@@ -40,7 +40,7 @@ impacted other parts of your web app.
 
 This module depends on [Image::Compare](https://metacpan.org/pod/Image::Compare) for comparison, and
 [Imager::File::PNG](https://metacpan.org/pod/Imager::File::PNG) for PNG support. The latter depends on
-`libpng-devel`; consult <Image::Install>'s documentation and/or your
+`libpng-devel`; consult [Image::Install](https://metacpan.org/pod/Image::Install)'s documentation and/or your
 local googles on how to get the appropriate libraries installed on
 your system. The following commands may be of aid on linux systems, or
 they may not help at all:
@@ -55,30 +55,19 @@ page](http://ethan.tira-thompson.com/Mac_OS_X_Ports.html) may help.
 
 ## png
 
-REQUIRED - A base64 encoded string representation of a png. For
+REQUIRED - A base64 encoded string representation of a PNG. For
 example, the string that the Selenium Webdriver server returns when
 you invoke the ["screenshot" in Selenium::Remote::Driver](https://metacpan.org/pod/Selenium::Remote::Driver#screenshot) method. After
 being passed to our constructor, this will be automatically
 instantiated into an Imager object: that is, `$screenshot->png`
 will return an Imager object.
 
-## threshold
-
-OPTIONAL - set the threshold at which images should be considered the
-same. The range is from 0 to 100; for comparison, these two images are
-N percent different, and these two images are N percent different. The
-default threshold is 5 out of 100.
-
-## folder
-
-OPTIONAL - a string where you'd like to save the screenshots on your
-local machine. It will be run through ["abs\_path" in Cwd](https://metacpan.org/pod/Cwd#abs_path) and we'll try to
-save there. If you don't pass anything and you invoke ["save"](#save), we'll
-try to save in `($pwd)/screenshots/`, wherever that may be.
+If you are so inclined, you may also pass an Imager object instead of
+a base64 encoded PNG.
 
 ## exclude
 
-Handle dynamic parts of your website by specify areas of the
+OPTIONAL - Handle dynamic parts of your website by specify areas of the
 screenshot to black out before comparison. We're working on
 simplifying this data structure as much as possible, but it's a bit
 complicated to handle the output of the functions from
@@ -89,7 +78,7 @@ and instantiated, you can do:
     Selenium::Screenshot->new(
         png => $driver->screenshot,
         exclude => [{
-            size => $elem->get_size,
+            size      => $elem->get_size,
             location  => $elem->get_element_location
         }]
     );
@@ -106,6 +95,42 @@ To construct the exclusions by hand, you can do:
 
 This would black out a 10x10 box with its top left corner 5 pixels
 from the top edge and 5 pixels from the left edge of the image.
+
+You may pass more than one rectangle at a time.
+
+Unfortunately, while we would like to accept CSS selectors, it feels a
+bit wrong to have to obtain the element's size and location from this
+module, which would make a binding dependency on
+Selenium::Remote::WebElement's interface. Although this is more
+cumbersome, it's a cleaner separation. In case you need help
+generating your exclude data structure, the following map might help:
+
+    my @elems = $d->find_elements('p', 'css');
+    my @exclude = map {
+        my $rect = {
+            size => $_->get_size,
+            location => $_->get_element_location
+        };
+        $rect
+    } @elems;
+    my $s = Selenium::Screenshot->new(
+        png => $d->screenshot,
+        exclude => [ @exclude ],
+    );
+
+## threshold
+
+OPTIONAL - set the threshold at which images should be considered the
+same. The range is from 0 to 100; for comparison, these two images are
+N percent different, and these two images are N percent different. The
+default threshold is 5 out of 100.
+
+## folder
+
+OPTIONAL - a string where you'd like to save the screenshots on your
+local machine. It will be run through ["abs\_path" in Cwd](https://metacpan.org/pod/Cwd#abs_path) and we'll try to
+save there. If you don't pass anything and you invoke ["save"](#save), we'll
+try to save in `($pwd)/screenshots/`, wherever that may be.
 
 ## metadata
 
@@ -197,7 +222,7 @@ metadata and override/shadow any keys that match.
 ## save
 
 Delegates to ["write" in Imager](https://metacpan.org/pod/Imager#write), which it uses to write to the filename
-as calculated by ["filename"](#filename). Like </filename>, you can pass in a
+as calculated by ["filename"](#filename). Like ["filename"](#filename), you can pass in a
 HASH of overrides to the filename if you'd like to customize it.
 
 # SEE ALSO
