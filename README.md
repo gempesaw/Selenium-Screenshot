@@ -4,20 +4,6 @@ Selenium::Screenshot - Compare and contrast Webdriver screenshots in PNG format
 
 [![Build Status](https://travis-ci.org/gempesaw/Selenium-Screenshot.svg?branch=master)](https://travis-ci.org/gempesaw/Selenium-Screenshot)
 
-# INSTALLATION
-
-This module depends on [Image::Compare](https://metacpan.org/pod/Image::Compare) for comparison, and
-[Imager::File::PNG](https://metacpan.org/pod/Imager::File::PNG) for PNG support. The latter depends on
-`libpng-devel`; consult your local googles on how to get the
-appropriate libraries installed on your system. The following commands
-may be of aid on linux systems, or they may not help at all:
-
-    sudo apt-get install libpng-dev
-    sudo yum install libpng-devel
-
-For OS X, perhaps [this
-page](http://ethan.tira-thompson.com/Mac_OS_X_Ports.html) may help.
-
 # VERSION
 
 version 0.02
@@ -62,6 +48,21 @@ parameters to [Image::Compare](https://metacpan.org/pod/Image::Compare) to allow
 images between two states of your app. For example, you might be
 interested in ensuring that your CSS refactor hasn't negatively
 impacted other parts of your web app.
+
+# INSTALLATION
+
+This module depends on [Image::Compare](https://metacpan.org/pod/Image::Compare) for comparison, and
+[Imager::File::PNG](https://metacpan.org/pod/Imager::File::PNG) for PNG support. The latter depends on
+`libpng-devel`; consult <Image::Install>'s documentation and/or your
+local googles on how to get the appropriate libraries installed on
+your system. The following commands may be of aid on linux systems, or
+they may not help at all:
+
+    sudo apt-get install libpng-dev
+    sudo yum install libpng-devel
+
+For OS X, perhaps [this
+page](http://ethan.tira-thompson.com/Mac_OS_X_Ports.html) may help.
 
 # ATTRIBUTES
 
