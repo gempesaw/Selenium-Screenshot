@@ -24,6 +24,12 @@ my $basic_args = {
 };
 my $screenshot = Selenium::Screenshot->new(%$basic_args);
 
+my $sample_png = $FindBin::Bin . '/sample.png';
+
+open (my $image_fh, "<", $sample_png) or die 'cannot open: ' . $!;
+my $png_string = encode_base64( do{ local $/ = undef; <$image_fh>; } );
+close ($image_fh);
+
 FILENAME: {
     my $timestamp = Selenium::Screenshot->new(
         %$basic_args
@@ -51,16 +57,19 @@ FILENAME: {
 
 METADATA: {
     my $meta_args = $basic_args;
+    $meta_args->{png} = $png_string;
     $meta_args->{metadata} = {
         url     => 'http://fake.url.com',
         build   => 'random-12347102.238402-build',
         browser => 'firefox'
     };
     my $meta_shot = Selenium::Screenshot->new(%$meta_args);
-    my $filename = $meta_shot->filename;
+    my $filename = $meta_shot->save(override => 'extra');
+    ok(-e $filename, 'save function writes to disk');
     ok($filename =~ /fake.url/, 'meta data is used in filename');
     ok($filename =~ /random\-1234/, 'meta data is used in filename');
     ok($filename =~ /firefox/, 'meta data is used in filename');
+    ok($filename =~ /extra/, 'override metadata is used in filename');
 }
 
 DIRTY_STRINGS: {
@@ -78,13 +87,6 @@ DIRTY_STRINGS: {
 }
 
 WITH_REAL_PNG: {
-    # common setup
-    my $sample_png = $FindBin::Bin . '/sample.png';
-
-    open (my $image_fh, "<", $sample_png) or die 'cannot open: ' . $!;
-    my $png_string = encode_base64( do{ local $/ = undef; <$image_fh>; } );
-    close ($image_fh);
-
     my $screenshot = Selenium::Screenshot->new(
         png => $png_string,
         metadata => {
@@ -176,7 +178,6 @@ WITH_REAL_PNG: {
 
     }
 }
-
 
 CLEANUP: {
     my @leftover_files = glob($fixture_dir . '*');

@@ -411,6 +411,24 @@ sub filename {
     return $filename;
 }
 
+=method save
+
+Delegates to L<Imager/write>, which it uses to write to the filename
+as calculated by L</filename>. Like </filename>, you can pass in a
+HASH of overrides to the filename if you'd like to customize it.
+
+=cut
+
+sub save {
+    my ($self, %overrides) = @_;
+
+    my $png = $self->png;
+    my $filename =  $self->filename(%overrides);
+    $png->write(file => $filename);
+
+    return $filename;
+}
+
 sub _img_exclude {
     my ($self, $img, $exclude) = @_;
     $exclude //= $self->exclude;

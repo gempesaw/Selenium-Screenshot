@@ -194,6 +194,12 @@ metadata and override/shadow any keys that match.
         key => 'shadow'
     ); # screenshots/shadow.png
 
+## save
+
+Delegates to ["write" in Imager](https://metacpan.org/pod/Imager#write), which it uses to write to the filename
+as calculated by ["filename"](#filename). Like </filename>, you can pass in a
+HASH of overrides to the filename if you'd like to customize it.
+
 # SEE ALSO
 
 Please see those modules/websites for more information related to this module.
