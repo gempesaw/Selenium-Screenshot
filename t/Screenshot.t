@@ -177,7 +177,26 @@ WITH_REAL_PNG: {
         }
 
     }
+
+  TARGET: {
+      UNIT: {
+            my $target = {
+                size     => { width => 1, height => 1 },
+                location => { x => 0, y => 0 }
+            };
+
+            my $img = Imager->new(file => $sample_png);
+            $img = Selenium::Screenshot->_img_target($img, $target);
+
+            cmp_ok($img->getwidth, 'eq', 1, 'target crops the png to x size');
+            cmp_ok($img->getheight, 'eq', 1, 'target crops the png to y size');
+        }
+
+    }
+
 }
+
+
 
 CLEANUP: {
     my @leftover_files = glob($fixture_dir . '*');

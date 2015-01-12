@@ -161,6 +161,52 @@ has exclude => (
     predicate => 1
 );
 
+=attr target
+
+Pass in a hashref with the size and location of the element you'd like
+to target. This can be useful if you want to assert that a particular
+element on your page stays the same across builds.
+
+Again, like in the case for L</exclude>, we'd like to make this easier
+for you but unfortunately we're uncomfortable directly invoking the
+methods on WebElement ourselves. For the time being, you'll have to
+provide this awkward HoH to specify a target.
+
+    my $elem = $driver->find_element($locator, $by);
+    my $s = Selenium::Screenshot->new(
+        png => $d->screenshot,
+        target => {
+            size => $elem->get_size,
+            location => $elem->get_element_location_in_view
+        }
+    );
+
+The screenshot will be cropped to the resulting dimensions as
+specified by the size and element location. Note that you will have to
+sort out issues when the element is not immediately displayed on the
+screen by invoking
+L<Selenium::Remote::WebElement/get_element_location_in_view>. This is
+especially true if you're using L</target> along with L</exclude>, as
+the locations of the elements you're excluding will surely change
+after scrolling to bring your targeted element in to view.
+
+=cut
+
+has target => (
+    is => 'ro',
+    lazy => 1,
+    default => sub { {} },
+    coerce => sub {
+        my ($rect) = @_;
+
+        croak 'Each exclude region must have size and location keys.'
+          unless exists $rect->{size} && exists $rect->{location};
+
+        return $rect;
+    },
+    predicate => 1
+);
+
 =attr threshold
 
 OPTIONAL - set the threshold at which images should be considered the
@@ -492,6 +538,26 @@ sub _img_exclude {
     }
 
     return $copy;
+}
+
+sub _img_target {
+    my ($self, $img, $target) = @_;
+    $target //= $self->target;
+
+    my ($size, $loc) = ($target->{size}, $target->{location});
+
+    my $left = $loc->{x};
+    my $top = $loc->{y};
+    my $right = $left + $size->{width};
+    my $bottom = $top + $size->{height};
+
+    # copy returns the cropped image, unlike box
+    return $img->crop(
+        left => $left,
+        top => $top,
+        right => $right,
+        bottom => $bottom
+    );
 }
 
 sub _sanitize_string {
