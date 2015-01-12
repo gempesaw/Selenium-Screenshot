@@ -287,6 +287,11 @@ has _cmp => (
         my ($self) = @_;
         my $cmp = Image::Compare->new;
 
+        if ($self->has_target) {
+            my $png = $self->_img_target($self->png);
+            $self->_set_png($png);
+        }
+
         if ($self->has_exclude) {
             my $png = $self->_img_exclude($self->png);
             $self->_set_png($png);
@@ -409,8 +414,9 @@ sub _diff_filename {
 sub _set_opponent {
     my ($self, $opponent) = @_;
 
-    $opponent = $self->_extract_image($opponent);
-    $opponent = $self->_img_exclude($opponent);
+    $opponent = $self->_extract_image( $opponent );
+    $opponent = $self->_img_target( $opponent ) if $self->has_target;
+    $opponent = $self->_img_exclude( $opponent ) if $self->has_exclude;
     $self->_cmp->set_image2( img => $opponent );
 
     return $opponent;
@@ -545,6 +551,13 @@ sub _img_target {
     $target //= $self->target;
 
     my ($size, $loc) = ($target->{size}, $target->{location});
+
+    unless (exists $loc->{x}
+            && exists $loc->{y}
+            && exists $size->{width}
+            && exists $size->{height}) {
+        next;
+    }
 
     my $left = $loc->{x};
     my $top = $loc->{y};
