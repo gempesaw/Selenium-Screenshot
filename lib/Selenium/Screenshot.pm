@@ -308,27 +308,48 @@ has _cmp => (
 
 =method compare
 
-C<compare> requires one argument: the filename, Imager object, or
-Selenium::Screenshot of a PNG to compare against. It must be the exact
-same size as the PNG you passed in to this instance of Screenshot. It
-returns a boolean as to whether the images meet your L</threshold> for
-similarity.
+C<compare> takes zero or one arguments with drastically different
+behavior in each case.
+
+If you invoke it without an argument, we'll try to find a reference as
+described in L</reference>. If we don't find a reference screenshot,
+we'll L<Carp/carp> about it and save the current screenshot as a
+reference and return the result of attempting to save the
+reference. That means that your first time running C<compare> without
+an argument, it may return something truthy, even though we haven't
+compared anything to anything.
+
+If we are able to find a reference in the expected spot, we'll compare
+the current screenshot to that reference and return a boolean as to
+the comparison.
+
+If you pass in one argument, it must be one of the following: the
+filename, Imager object, or Selenium::Screenshot of a PNG to compare
+against. It must be the exact same size as the PNG you passed in to
+this instance of Screenshot. It returns a boolean as to whether the
+images meet your L</threshold> for similarity.
 
 =cut
 
 sub compare {
     my ($self, $opponent) = @_;
-    $self->_set_opponent($opponent);
+    $opponent = $self->_set_opponent($opponent);
 
-    $self->_cmp->set_method(
-        method => &Image::Compare::AVG_THRESHOLD,
-        args   => {
-            type  => &Image::Compare::AVG_THRESHOLD::MEAN,
-            value => $self->threshold,
-        }
-    );
+    if (not defined $opponent) {
+        carp 'No reference was provided or found, so no comparison was done. We\'ve saved a reference at ' . $self->reference;
+        return $self->save_reference;
+    }
+    else {
+        $self->_cmp->set_method(
+            method => &Image::Compare::AVG_THRESHOLD,
+            args   => {
+                type  => &Image::Compare::AVG_THRESHOLD::MEAN,
+                value => $self->threshold,
+            }
+        );
 
-    return $self->_cmp->compare;
+        return $self->_cmp->compare;
+    }
 }
 
 =method difference

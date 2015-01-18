@@ -128,6 +128,11 @@ WITH_REAL_PNG: {
     my $different = $FindBin::Bin . '/sample-diff.png';
 
   COMPARE: {
+        ok($screenshot->compare, 'no argument compare passes the first try');
+        ok($screenshot->compare, 'no argument compare actually compares the second time');
+        copy( $different, $screenshot->reference );
+        ok( ! $screenshot->compare, 'no argument compare properly fails a comparison');
+
         ok($screenshot->compare($sample_png), 'comparing to self passes');
         ok(!$screenshot->compare($different), 'comparing two different images fails!');
     }
