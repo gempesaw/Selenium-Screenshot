@@ -1,11 +1,12 @@
 Revision history for perl module Selenium::Screenshot
 
-0.03 2014-11-18
+0.04 2014-01-18
+ - Simplify base case of comparing screenshots
+ - Add cropping/targetting functionality via target attr
 
+0.03 2015-01-08
  - Delegate saving down to Imager's save instead of doing it ourselves
-
  - Enable direct comparison of Selenium::Screenshots with itself
-
  - Add new attribute 'exclude' to black out rectangles entirely for
    handling screenshots with dynamic content
 
