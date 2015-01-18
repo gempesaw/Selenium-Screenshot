@@ -183,11 +183,26 @@ regex-substituted by '-' in the filename.
 
 ## compare
 
-`compare` requires one argument: the filename, Imager object, or
-Selenium::Screenshot of a PNG to compare against. It must be the exact
-same size as the PNG you passed in to this instance of Screenshot. It
-returns a boolean as to whether the images meet your ["threshold"](#threshold) for
-similarity.
+`compare` takes zero or one arguments with drastically different
+behavior in each case.
+
+If you invoke it without an argument, we'll try to find a reference as
+described in ["reference"](#reference). If we don't find a reference screenshot,
+we'll ["carp" in Carp](https://metacpan.org/pod/Carp#carp) about it and save the current screenshot as a
+reference and return the result of attempting to save the
+reference. That means that your first time running `compare` without
+an argument, it may return something truthy, even though we haven't
+compared anything to anything.
+
+If we are able to find a reference in the expected spot, we'll compare
+the current screenshot to that reference and return a boolean as to
+the comparison.
+
+If you pass in one argument, it must be one of the following: the
+filename, Imager object, or Selenium::Screenshot of a PNG to compare
+against. It must be the exact same size as the PNG you passed in to
+this instance of Screenshot. It returns a boolean as to whether the
+images meet your ["threshold"](#threshold) for similarity.
 
 ## difference
 
@@ -206,6 +221,20 @@ image is computed via the metadata provided during instantiation, with
 
     my $diff_file = $screenshot->difference($oppoent);
     `open $diff_file`;
+
+## find\_opponent
+
+Takes no arguments. Searches in ["folder"](#folder) for a reference image to
+either do difference or comparison. If a reference png is found, an
+Imager object of that file is returned.
+
+Feel free to subclass Selenium::Screenshot and override this method
+with your own routine to find your reference file, wherever it may be
+located (AWS, database, etc). We return an Imager object internally,
+but we'll also accept a filename to the .png somewhere on your local
+machine.
+
+This function is invoked if you call ["compare"](#compare) with no arguments.
 
 ## filename
 
@@ -248,11 +277,23 @@ metadata and override/shadow any keys that match.
         key => 'shadow'
     ); # screenshots/shadow.png
 
+## reference
+
+Returns a STRING using the ["metadata"](#metadata) and ["folder"](#folder), but with
+\-reference appended to the very end. This is the file that ["compare"](#compare)
+will look for automatically, if it is not passed any arguments.
+
 ## save
 
 Delegates to ["write" in Imager](https://metacpan.org/pod/Imager#write), which it uses to write to the filename
 as calculated by ["filename"](#filename). Like ["filename"](#filename), you can pass in a
 HASH of overrides to the filename if you'd like to customize it.
+
+## save\_reference
+
+Saves a file according to the ["metadata"](#metadata) and ["folder"](#folder) options with
+\-reference suffixed to the end of it. By default, ["compare"](#compare) will
+look for this file if it receives no arguments.
 
 # SEE ALSO
 
