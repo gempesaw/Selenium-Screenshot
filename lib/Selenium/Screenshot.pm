@@ -430,6 +430,10 @@ sub _diff_filename {
 
 sub _set_opponent {
     my ($self, $opponent) = @_;
+    $opponent //= $self->find_opponent;
+
+    # No opponent was provided, and we can't find one.
+    return unless $opponent;
 
     $opponent = $self->_extract_image( $opponent );
     $opponent = $self->_img_target( $opponent ) if $self->has_target;

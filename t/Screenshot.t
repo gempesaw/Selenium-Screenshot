@@ -67,6 +67,25 @@ FILENAME: {
     ok( $ref->find_opponent, 'can find out that reference is present');
 }
 
+OPPONENT: {
+    my $screenshot = Selenium::Screenshot->new(
+        png => $png_string,
+        metadata => {
+            something => 'unique'
+        },
+        folder => $fixture_dir
+    );
+
+    my $undef = $screenshot->_set_opponent;
+    ok( ! $undef, 'no opponent and no reference is short circuited' );
+
+    my $def = $screenshot->_set_opponent(Imager->new(png => $png_string));
+    ok( $def, 'an opponent without a reference is found');
+
+    $screenshot->save_reference;
+    ok ($screenshot->_set_opponent, 'no reference with an opponent is found');
+}
+
 METADATA: {
     my $meta_args = $basic_args;
     $meta_args->{png} = $png_string;
