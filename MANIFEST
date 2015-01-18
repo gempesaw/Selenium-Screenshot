@@ -9,9 +9,7 @@ Makefile.PL
 cpanfile
 dist.ini
 examples/basic.pl
-examples/screenshots/1420648278.png
-examples/screenshots/1420649547.png
-examples/screenshots/diff.png
+examples/exclude.pl
 lib/Selenium/Screenshot.pm
 t/Screenshot.t
 t/sample-diff.png

@@ -1,5 +1,5 @@
 package Selenium::Screenshot;
-$Selenium::Screenshot::VERSION = '0.03';
+$Selenium::Screenshot::VERSION = '0.04';
 # ABSTRACT: Compare and contrast Webdriver screenshots in PNG format
 use Moo;
 use Image::Compare;
@@ -50,6 +50,22 @@ has exclude => (
 );
 
 
+has target => (
+    is => 'ro',
+    lazy => 1,
+    default => sub { {} },
+    coerce => sub {
+        my ($rect) = @_;
+
+        croak 'Each exclude region must have size and location keys.'
+          unless exists $rect->{size} && exists $rect->{location};
+
+        return $rect;
+    },
+    predicate => 1
+);
+
+
 # TODO: add threshold tests
 # TODO: provide reference images
 
@@ -94,6 +110,11 @@ has _cmp => (
         my ($self) = @_;
         my $cmp = Image::Compare->new;
 
+        if ($self->has_target) {
+            my $png = $self->_img_target($self->png);
+            $self->_set_png($png);
+        }
+
         if ($self->has_exclude) {
             my $png = $self->_img_exclude($self->png);
             $self->_set_png($png);
@@ -111,17 +132,23 @@ has _cmp => (
 
 sub compare {
     my ($self, $opponent) = @_;
-    $self->_set_opponent($opponent);
+    $opponent = $self->_set_opponent($opponent);
 
-    $self->_cmp->set_method(
-        method => &Image::Compare::AVG_THRESHOLD,
-        args   => {
-            type  => &Image::Compare::AVG_THRESHOLD::MEAN,
-            value => $self->threshold,
-        }
-    );
+    if (not defined $opponent) {
+        carp 'No reference was provided or found, so no comparison was done. We\'ve saved a reference at ' . $self->reference;
+        return $self->save_reference;
+    }
+    else {
+        $self->_cmp->set_method(
+            method => &Image::Compare::AVG_THRESHOLD,
+            args   => {
+                type  => &Image::Compare::AVG_THRESHOLD::MEAN,
+                value => $self->threshold,
+            }
+        );
 
-    return $self->_cmp->compare;
+        return $self->_cmp->compare;
+    }
 }
 
 
@@ -168,28 +195,35 @@ sub difference {
     return $name;
 }
 
+
+sub find_opponent {
+    my ($self) = @_;
+
+    my $default_reference = $self->reference;
+    if (-e $default_reference) {
+        return Imager->new(file => $default_reference);
+    }
+}
+
 sub _diff_filename {
     my ($self) = @_;
 
-    # we'd like to suffix "diff" on to the filename to separate the
-    # diff files from the normal files. But, since we're sorting the
-    # keys of our metadata, we need to be a little clever about naming
-    # the key of what we're passing to ->filename.
-    my $suffix = 'suffix';
-    if ($self->has_metadata) {
-        my @keys = sort keys %{ $self->metadata };
-        my $last_key = pop @keys;
-        $suffix = 'z' . $last_key;
-    }
+    my $diff = $self->filename;
+    $diff =~ s/\.png$/-diff.png/;
 
-    return $self->filename($suffix => 'diff');
+    return $diff;
 }
 
 sub _set_opponent {
     my ($self, $opponent) = @_;
+    $opponent //= $self->find_opponent;
 
-    $opponent = $self->_extract_image($opponent);
-    $opponent = $self->_img_exclude($opponent);
+    # No opponent was provided, and we can't find one.
+    return unless $opponent;
+
+    $opponent = $self->_extract_image( $opponent );
+    $opponent = $self->_img_target( $opponent ) if $self->has_target;
+    $opponent = $self->_img_exclude( $opponent ) if $self->has_exclude;
     $self->_cmp->set_image2( img => $opponent );
 
     return $opponent;
@@ -220,6 +254,16 @@ sub filename {
 }
 
 
+sub reference {
+    my ($self) = @_;
+
+    my $default_reference = $self->filename;
+    $default_reference =~ s/\.png$/-reference.png/;
+
+    return $default_reference;
+}
+
+
 sub save {
     my ($self, %overrides) = @_;
 
@@ -228,6 +272,16 @@ sub save {
     $png->write(file => $filename);
 
     return $filename;
+}
+
+
+sub save_reference {
+    my ($self) = @_;
+
+    my $png = $self->png;
+    $png->write(file => $self->reference);
+
+    return $self->reference;
 }
 
 sub _img_exclude {
@@ -268,6 +322,33 @@ sub _img_exclude {
     }
 
     return $copy;
+}
+
+sub _img_target {
+    my ($self, $img, $target) = @_;
+    $target //= $self->target;
+
+    my ($size, $loc) = ($target->{size}, $target->{location});
+
+    unless (exists $loc->{x}
+            && exists $loc->{y}
+            && exists $size->{width}
+            && exists $size->{height}) {
+        next;
+    }
+
+    my $left = $loc->{x};
+    my $top = $loc->{y};
+    my $right = $left + $size->{width};
+    my $bottom = $top + $size->{height};
+
+    # copy returns the cropped image, unlike box
+    return $img->crop(
+        left => $left,
+        top => $top,
+        right => $right,
+        bottom => $bottom
+    );
 }
 
 sub _sanitize_string {
@@ -316,7 +397,7 @@ Selenium::Screenshot - Compare and contrast Webdriver screenshots in PNG format
 
 =head1 VERSION
 
-version 0.03
+version 0.04
 
 =head1 SYNOPSIS
 
@@ -428,6 +509,35 @@ generating your exclude data structure, the following map might help:
         exclude => [ @exclude ],
     );
 
+=head2 target
+
+Pass in a hashref with the size and location of the element you'd like
+to target. This can be useful if you want to assert that a particular
+element on your page stays the same across builds.
+
+Again, like in the case for L</exclude>, we'd like to make this easier
+for you but unfortunately we're uncomfortable directly invoking the
+methods on WebElement ourselves. For the time being, you'll have to
+provide this awkward HoH to specify a target.
+
+    my $elem = $driver->find_element($locator, $by);
+    my $s = Selenium::Screenshot->new(
+        png => $d->screenshot,
+        target => {
+            size => $elem->get_size,
+            location => $elem->get_element_location_in_view
+        }
+    );
+
+The screenshot will be cropped to the resulting dimensions as
+specified by the size and element location. Note that you will have to
+sort out issues when the element is not immediately displayed on the
+screen by invoking
+L<Selenium::Remote::WebElement/get_element_location_in_view>. This is
+especially true if you're using L</target> along with L</exclude>, as
+the locations of the elements you're excluding will surely change
+after scrolling to bring your targeted element in to view.
+
 =head2 threshold
 
 OPTIONAL - set the threshold at which images should be considered the
@@ -464,11 +574,26 @@ regex-substituted by '-' in the filename.
 
 =head2 compare
 
-C<compare> requires one argument: the filename, Imager object, or
-Selenium::Screenshot of a PNG to compare against. It must be the exact
-same size as the PNG you passed in to this instance of Screenshot. It
-returns a boolean as to whether the images meet your L</threshold> for
-similarity.
+C<compare> takes zero or one arguments with drastically different
+behavior in each case.
+
+If you invoke it without an argument, we'll try to find a reference as
+described in L</reference>. If we don't find a reference screenshot,
+we'll L<Carp/carp> about it and save the current screenshot as a
+reference and return the result of attempting to save the
+reference. That means that your first time running C<compare> without
+an argument, it may return something truthy, even though we haven't
+compared anything to anything.
+
+If we are able to find a reference in the expected spot, we'll compare
+the current screenshot to that reference and return a boolean as to
+the comparison.
+
+If you pass in one argument, it must be one of the following: the
+filename, Imager object, or Selenium::Screenshot of a PNG to compare
+against. It must be the exact same size as the PNG you passed in to
+this instance of Screenshot. It returns a boolean as to whether the
+images meet your L</threshold> for similarity.
 
 =head2 difference
 
@@ -487,6 +612,20 @@ image is computed via the metadata provided during instantiation, with
 
     my $diff_file = $screenshot->difference($oppoent);
     `open $diff_file`;
+
+=head2 find_opponent
+
+Takes no arguments. Searches in L</folder> for a reference image to
+either do difference or comparison. If a reference png is found, an
+Imager object of that file is returned.
+
+Feel free to subclass Selenium::Screenshot and override this method
+with your own routine to find your reference file, wherever it may be
+located (AWS, database, etc). We return an Imager object internally,
+but we'll also accept a filename to the .png somewhere on your local
+machine.
+
+This function is invoked if you call L</compare> with no arguments.
 
 =head2 filename
 
@@ -529,11 +668,23 @@ metadata and override/shadow any keys that match.
         key => 'shadow'
     ); # screenshots/shadow.png
 
+=head2 reference
+
+Returns a STRING using the L</metadata> and L</folder>, but with
+-reference appended to the very end. This is the file that L</compare>
+will look for automatically, if it is not passed any arguments.
+
 =head2 save
 
 Delegates to L<Imager/write>, which it uses to write to the filename
 as calculated by L</filename>. Like L</filename>, you can pass in a
 HASH of overrides to the filename if you'd like to customize it.
+
+=head2 save_reference
+
+Saves a file according to the L</metadata> and L</folder> options with
+-reference suffixed to the end of it. By default, L</compare> will
+look for this file if it receives no arguments.
 
 =head1 SEE ALSO
 
@@ -582,7 +733,7 @@ Daniel Gempesaw <gempesaw@gmail.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2014 by Daniel Gempesaw.
+This software is copyright (c) 2015 by Daniel Gempesaw.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.

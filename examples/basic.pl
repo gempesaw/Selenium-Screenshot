@@ -3,7 +3,6 @@
 use strict;
 use warnings;
 use Selenium::Remote::Driver;
-use lib('../lib');
 use Selenium::Screenshot;
 
 my $driver = Selenium::Remote::Driver->new;

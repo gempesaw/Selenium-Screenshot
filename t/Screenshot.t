@@ -53,6 +53,37 @@ FILENAME: {
         key => 'shadow'
     );
     cmp_ok($shadow , '=~', qr/shadow\.png/, 'filename works for shadowed metadata');
+
+    my $ref = Selenium::Screenshot->new(
+        %$basic_args,
+        png => $png_string
+    );
+
+    cmp_ok($ref->reference, '=~', qr/-reference\.png$/, 'reference filename works');
+    ok( ! $ref->find_opponent, 'can find out that reference is missing');
+
+    $ref->save_reference;
+    ok(-e $ref->reference, 'saving reference writes to disk');
+    ok( $ref->find_opponent, 'can find out that reference is present');
+}
+
+OPPONENT: {
+    my $screenshot = Selenium::Screenshot->new(
+        png => $png_string,
+        metadata => {
+            something => 'unique'
+        },
+        folder => $fixture_dir
+    );
+
+    my $undef = $screenshot->_set_opponent;
+    ok( ! $undef, 'no opponent and no reference is short circuited' );
+
+    my $def = $screenshot->_set_opponent(Imager->new(png => $png_string));
+    ok( $def, 'an opponent without a reference is found');
+
+    $screenshot->save_reference;
+    ok ($screenshot->_set_opponent, 'no reference with an opponent is found');
 }
 
 METADATA: {
@@ -97,6 +128,11 @@ WITH_REAL_PNG: {
     my $different = $FindBin::Bin . '/sample-diff.png';
 
   COMPARE: {
+        ok($screenshot->compare, 'no argument compare passes the first try');
+        ok($screenshot->compare, 'no argument compare actually compares the second time');
+        copy( $different, $screenshot->reference );
+        ok( ! $screenshot->compare, 'no argument compare properly fails a comparison');
+
         ok($screenshot->compare($sample_png), 'comparing to self passes');
         ok(!$screenshot->compare($different), 'comparing two different images fails!');
     }
@@ -177,6 +213,42 @@ WITH_REAL_PNG: {
         }
 
     }
+
+  TARGET: {
+      UNIT: {
+            my $target = {
+                size     => { width => 1, height => 1 },
+                location => { x => 0, y => 0 }
+            };
+
+            my $img = Imager->new(file => $sample_png);
+            $img = Selenium::Screenshot->_img_target($img, $target);
+
+            cmp_ok($img->getwidth, 'eq', 1, 'target crops the png to x size');
+            cmp_ok($img->getheight, 'eq', 1, 'target crops the png to y size');
+        }
+
+      E2E: {
+            my $right_half_black = Selenium::Screenshot->new(
+                png => $png_string,
+                exclude => [{
+                    size => { width => 8, height => 16 },
+                    location => { x => 8, y => 0 }
+                }]
+            );
+
+            my $target_left_half = Selenium::Screenshot->new(
+                png => $png_string,
+                target => {
+                    size => { width => 8, height => 16 },
+                    location => { x => 0, y => 0 }
+                }
+            );
+
+            ok($target_left_half->compare($right_half_black), 'target crops a screenshot as desired');
+        }
+    }
+
 }
 
 CLEANUP: {
