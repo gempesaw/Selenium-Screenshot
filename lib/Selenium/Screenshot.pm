@@ -523,6 +523,23 @@ sub save {
     return $filename;
 }
 
+=method save_reference
+
+Saves a file according to the L</metadata> and L</folder> options with
+-reference suffixed to the end of it. By default, L</compare> will
+look for this file if it receives no arguments.
+
+=cut
+
+sub save_reference {
+    my ($self) = @_;
+
+    my $png = $self->png;
+    $png->write(file => $self->reference);
+
+    return $self->reference;
+}
+
 sub _img_exclude {
     my ($self, $img, $exclude) = @_;
     $exclude //= $self->exclude;

@@ -54,10 +54,13 @@ FILENAME: {
     );
     cmp_ok($shadow , '=~', qr/shadow\.png/, 'filename works for shadowed metadata');
 
-    my $reference = Selenium::Screenshot->new(
-        %$basic_args
-    )->reference;
-    cmp_ok($reference, '=~', qr/-reference\.png$/, 'reference filename works');
+    my $ref = Selenium::Screenshot->new(
+        %$basic_args,
+        png => $png_string
+    );
+    cmp_ok($ref->reference, '=~', qr/-reference\.png$/, 'reference filename works');
+    $ref->save_reference;
+    ok(-e $ref->reference, 'saving reference writes to disk');
 }
 
 METADATA: {
