@@ -53,6 +53,11 @@ FILENAME: {
         key => 'shadow'
     );
     cmp_ok($shadow , '=~', qr/shadow\.png/, 'filename works for shadowed metadata');
+
+    my $reference = Selenium::Screenshot->new(
+        %$basic_args
+    )->reference;
+    cmp_ok($reference, '=~', qr/-reference\.png$/, 'reference filename works');
 }
 
 METADATA: {
@@ -214,8 +219,6 @@ WITH_REAL_PNG: {
     }
 
 }
-
-
 
 CLEANUP: {
     my @leftover_files = glob($fixture_dir . '*');

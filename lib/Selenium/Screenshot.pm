@@ -488,6 +488,23 @@ sub filename {
     return $filename;
 }
 
+=method reference
+
+Returns a STRING using the L</metadata> and L</folder>, but with
+-reference appended to the very end. This is the file that L</compare>
+will look for automatically, if it is not passed any arguments.
+
+=cut
+
+sub reference {
+    my ($self) = @_;
+
+    my $default_reference = $self->filename;
+    $default_reference =~ s/\.png$/-reference.png/;
+
+    return $default_reference;
+}
+
 =method save
 
 Delegates to L<Imager/write>, which it uses to write to the filename
