@@ -58,9 +58,13 @@ FILENAME: {
         %$basic_args,
         png => $png_string
     );
+
     cmp_ok($ref->reference, '=~', qr/-reference\.png$/, 'reference filename works');
+    ok( ! $ref->find_opponent, 'can find out that reference is missing');
+
     $ref->save_reference;
     ok(-e $ref->reference, 'saving reference writes to disk');
+    ok( $ref->find_opponent, 'can find out that reference is present');
 }
 
 METADATA: {

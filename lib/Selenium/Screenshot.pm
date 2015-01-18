@@ -395,6 +395,23 @@ sub difference {
 }
 
 sub _diff_filename {
+=method find_opponent
+
+Takes no arguments. Searches in L</folder> for a reference image to
+either do difference or comparison. If a reference png is found, an
+Imager object of that file is returned.
+
+Feel free to subclass Selenium::Screenshot and override this method
+with your own routine to find your reference file, wherever it may be
+located (AWS, database, etc). We return an Imager object internally,
+but we'll also accept a filename to the .png somewhere on your local
+machine.
+
+This function is invoked if you call L</compare> with no arguments.
+
+=cut
+
+sub find_opponent {
     my ($self) = @_;
 
     # we'd like to suffix "diff" on to the filename to separate the
@@ -406,7 +423,11 @@ sub _diff_filename {
         my @keys = sort keys %{ $self->metadata };
         my $last_key = pop @keys;
         $suffix = 'z' . $last_key;
+    my $default_reference = $self->reference;
+    if (-e $default_reference) {
+        return Imager->new(file => $default_reference);
     }
+}
 
     return $self->filename($suffix => 'diff');
 }
