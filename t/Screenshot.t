@@ -2,7 +2,6 @@
 
 use strict;
 use warnings;
-use File::Copy;
 use FindBin;
 use Imager;
 use MIME::Base64;
@@ -18,6 +17,7 @@ BEGIN: {
 my $string = 'fake-encoded-string';
 my $fixture_dir = $FindBin::Bin . '/screenshots/';
 
+cleanup_test_dir();
 my $basic_args = {
     png => encode_base64($string),
     folder => $fixture_dir
@@ -79,7 +79,7 @@ OPPONENT: {
     my $undef = $screenshot->_set_opponent;
     ok( ! $undef, 'no opponent and no reference is short circuited' );
 
-    my $def = $screenshot->_set_opponent(Imager->new(png => $png_string));
+    my $def = $screenshot->_set_opponent( Imager->new( file => $sample_png ) );
     ok( $def, 'an opponent without a reference is found');
 
     $screenshot->save_reference;
@@ -123,23 +123,32 @@ WITH_REAL_PNG: {
         metadata => {
             test => 'compare',
             and  => 'diff'
-        }
+        },
+        folder => $fixture_dir
     );
-    my $different = $FindBin::Bin . '/sample-diff.png';
+
+    my $fail_image = $fixture_dir . 'diff-compare-reference.png';
 
   COMPARE: {
         ok($screenshot->compare, 'no argument compare passes the first try');
         ok($screenshot->compare, 'no argument compare actually compares the second time');
-        copy( $different, $screenshot->reference );
+
+        # overwrite the reference image with a black box such that
+        # when ->compare looks for its default opponent, it will find
+        # our black box and fail the comparison.
+        Imager->new( xsize => 16, ysize => 16 )->write(
+            file => $fail_image
+        );
+
         ok( ! $screenshot->compare, 'no argument compare properly fails a comparison');
 
         ok($screenshot->compare($sample_png), 'comparing to self passes');
-        ok(!$screenshot->compare($different), 'comparing two different images fails!');
+        ok(! $screenshot->compare( $fail_image ), 'comparing two different images fails!');
     }
 
   CONTRAST: {
         # get the difference file
-        my $diff_file = $screenshot->difference($different);
+        my $diff_file = $screenshot->difference( $fail_image );
         ok( -e $diff_file, 'diff file exists' );
         cmp_ok( $diff_file, '=~', qr/-diff\.png/, 'diff is named differently' );
     }
@@ -251,7 +260,8 @@ WITH_REAL_PNG: {
 
 }
 
-CLEANUP: {
+cleanup_test_dir();
+sub cleanup_test_dir {
     my @leftover_files = glob($fixture_dir . '*');
     map { unlink } @leftover_files;
     rmdir $fixture_dir;
