@@ -1,5 +1,8 @@
 Revision history for perl module Selenium::Screenshot
 
+0.05 2015-07-17
+ - Begin auto-padding images to avoid Imager dying messages
+
 0.04 2014-01-18
  - Simplify base case of comparing screenshots
  - Add cropping/targetting functionality via target attr

@@ -11,7 +11,6 @@ requires "Moo::Role" => "0";
 requires "Scalar::Util" => "0";
 
 on 'test' => sub {
-  requires "File::Copy" => "0";
   requires "FindBin" => "0";
   requires "Test::More" => "0";
   requires "Test::Spec" => "0";

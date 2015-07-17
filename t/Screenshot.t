@@ -2,7 +2,6 @@
 
 use strict;
 use warnings;
-use File::Copy;
 use FindBin;
 use Imager;
 use MIME::Base64;
@@ -124,10 +123,11 @@ WITH_REAL_PNG: {
         metadata => {
             test => 'compare',
             and  => 'diff'
-        }
+        },
+        folder => $fixture_dir
     );
 
-    my $fail_image = $FindBin::Bin . '/screenshots/diff-compare-reference.png';
+    my $fail_image = $fixture_dir . 'diff-compare-reference.png';
 
   COMPARE: {
         ok($screenshot->compare, 'no argument compare passes the first try');
