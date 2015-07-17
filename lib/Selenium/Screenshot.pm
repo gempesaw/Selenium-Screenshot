@@ -306,6 +306,8 @@ has _cmp => (
     }
 );
 
+with 'Selenium::Screenshot::CanPad';
+
 =method compare
 
 C<compare> takes zero or one arguments with drastically different
@@ -457,8 +459,18 @@ sub _set_opponent {
     return unless $opponent;
 
     $opponent = $self->_extract_image( $opponent );
+
+    # Before setting this $opponent as our image2, we must ensure that
+    # our $self->png image and this $opponent are the same size.
+    if (! $self->cmp_image_dims( $self->png, $opponent )) {
+        my ($new_png, $new_opp) = $self->coerce_image_size( $self->png, $opponent );
+        $self->_set_png( $new_png );
+        $opponent = $new_opp;
+    }
+
     $opponent = $self->_img_target( $opponent ) if $self->has_target;
     $opponent = $self->_img_exclude( $opponent ) if $self->has_exclude;
+
     $self->_cmp->set_image2( img => $opponent );
 
     return $opponent;
