@@ -80,6 +80,11 @@ attribute unnecessarily.
 sub cmp_image_dims {
     my ($self, $image1, $image2) = @_;
 
+    foreach ( $image1, $image2 ) {
+        croak 'Expected two Imager objects'
+          unless blessed $_ && $_->isa('Imager');
+    }
+
     return $image1->getheight == $image2->getheight &&
       $image1->getwidth == $image2->getwidth;
 }
