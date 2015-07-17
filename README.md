@@ -6,7 +6,7 @@ Selenium::Screenshot - Compare and contrast Webdriver screenshots in PNG format
 
 # VERSION
 
-version 0.04
+version 0.05
 
 # SYNOPSIS
 
