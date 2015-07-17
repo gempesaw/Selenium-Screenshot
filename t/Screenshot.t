@@ -18,6 +18,7 @@ BEGIN: {
 my $string = 'fake-encoded-string';
 my $fixture_dir = $FindBin::Bin . '/screenshots/';
 
+cleanup_test_dir();
 my $basic_args = {
     png => encode_base64($string),
     folder => $fixture_dir
@@ -251,7 +252,8 @@ WITH_REAL_PNG: {
 
 }
 
-CLEANUP: {
+cleanup_test_dir();
+sub cleanup_test_dir {
     my @leftover_files = glob($fixture_dir . '*');
     map { unlink } @leftover_files;
     rmdir $fixture_dir;
