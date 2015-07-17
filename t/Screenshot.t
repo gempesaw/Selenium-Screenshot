@@ -126,21 +126,29 @@ WITH_REAL_PNG: {
             and  => 'diff'
         }
     );
-    my $different = $FindBin::Bin . '/sample-diff.png';
+
+    my $fail_image = $FindBin::Bin . '/screenshots/diff-compare-reference.png';
 
   COMPARE: {
         ok($screenshot->compare, 'no argument compare passes the first try');
         ok($screenshot->compare, 'no argument compare actually compares the second time');
-        copy( $different, $screenshot->reference );
+
+        # overwrite the reference image with a black box such that
+        # when ->compare looks for its default opponent, it will find
+        # our black box and fail the comparison.
+        Imager->new( xsize => 16, ysize => 16 )->write(
+            file => $fail_image
+        );
+
         ok( ! $screenshot->compare, 'no argument compare properly fails a comparison');
 
         ok($screenshot->compare($sample_png), 'comparing to self passes');
-        ok(!$screenshot->compare($different), 'comparing two different images fails!');
+        ok(! $screenshot->compare( $fail_image ), 'comparing two different images fails!');
     }
 
   CONTRAST: {
         # get the difference file
-        my $diff_file = $screenshot->difference($different);
+        my $diff_file = $screenshot->difference( $fail_image );
         ok( -e $diff_file, 'diff file exists' );
         cmp_ok( $diff_file, '=~', qr/-diff\.png/, 'diff is named differently' );
     }
