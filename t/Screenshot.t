@@ -80,7 +80,7 @@ OPPONENT: {
     my $undef = $screenshot->_set_opponent;
     ok( ! $undef, 'no opponent and no reference is short circuited' );
 
-    my $def = $screenshot->_set_opponent(Imager->new(png => $png_string));
+    my $def = $screenshot->_set_opponent( Imager->new( file => $sample_png ) );
     ok( $def, 'an opponent without a reference is found');
 
     $screenshot->save_reference;
