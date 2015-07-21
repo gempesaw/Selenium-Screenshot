@@ -8,6 +8,7 @@ use Imager;
 package Padder {
     use Moo;
     with 'Selenium::Screenshot::CanPad';
+    1;
 };
 
 describe 'Image padding role' => sub {
