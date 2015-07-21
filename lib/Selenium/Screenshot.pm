@@ -672,9 +672,9 @@ sub _extract_image {
     my ($self, $file_or_image) = @_;
 
     my $err_msg = 'We were expecting one of: a filename, Imager object, or Selenium::Screenshot object';
-    die $err_msg unless defined $file_or_image;
+    croak $err_msg unless defined $file_or_image;
 
-    if ( blessed( $file_or_image) ) {
+    if ( blessed( $file_or_image ) ) {
         if ($file_or_image->isa('Selenium::Screenshot')) {
             return $file_or_image->png;
         }
