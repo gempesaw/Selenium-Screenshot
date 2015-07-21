@@ -78,12 +78,18 @@ has png => (
 
         # We are prepared to handle an Imager object, or a base64
         # encoded png.
-        if ( blessed( $png_or_image ) && $png_or_image) {
+        if ( blessed( $png_or_image ) && $png_or_image->isa('Imager')) {
             return $png_or_image;
         }
         else {
             my $data = decode_base64($png_or_image);
-            return Imager->new(data => $data);
+            my $image = Imager->new(data => $data);
+            if (Imager->errstr) {
+                die "you must provide a base64 encoded png. We were not able to create an Imager object after base64 decoding your input; Imager's error message was:\n\n" . Imager->errstr;
+            }
+            else {
+                return $image;
+            }
         }
     },
     required => 1
