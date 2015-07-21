@@ -56,12 +56,13 @@
       "bugtracker" : {
          "web" : "https://github.com/gempesaw/Selenium-Screenshot/issues"
       },
+      "homepage" : "https://github.com/gempesaw/Selenium-Screenshot",
       "repository" : {
          "type" : "git",
-         "url" : "git://github.com/gempesaw/Selenium-Screenshot.git",
+         "url" : "https://github.com/gempesaw/Selenium-Screenshot.git",
          "web" : "https://github.com/gempesaw/Selenium-Screenshot"
       }
    },
-   "version" : "0.05"
+   "version" : "0.06"
 }
 

@@ -31,5 +31,6 @@ requires:
   Scalar::Util: '0'
 resources:
   bugtracker: https://github.com/gempesaw/Selenium-Screenshot/issues
-  repository: git://github.com/gempesaw/Selenium-Screenshot.git
-version: '0.05'
+  homepage: https://github.com/gempesaw/Selenium-Screenshot
+  repository: https://github.com/gempesaw/Selenium-Screenshot.git
+version: '0.06'

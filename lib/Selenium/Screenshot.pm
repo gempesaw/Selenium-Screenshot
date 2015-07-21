@@ -1,12 +1,12 @@
 package Selenium::Screenshot;
-$Selenium::Screenshot::VERSION = '0.05';
+$Selenium::Screenshot::VERSION = '0.06';
 # ABSTRACT: Compare and contrast Webdriver screenshots in PNG format
 use Moo;
 use Image::Compare;
 use Imager qw/:handy/;
 use Imager::Color;
 use Imager::Fountain;
-use Carp qw/croak carp/;
+use Carp qw/croak carp confess/;
 use Cwd qw/abs_path/;
 use MIME::Base64;
 use Scalar::Util qw/blessed/;
@@ -20,12 +20,19 @@ has png => (
 
         # We are prepared to handle an Imager object, or a base64
         # encoded png.
-        if ( blessed( $png_or_image ) && $png_or_image) {
+        if ( blessed( $png_or_image ) && $png_or_image->isa('Imager')) {
             return $png_or_image;
         }
         else {
             my $data = decode_base64($png_or_image);
-            return Imager->new(data => $data);
+            my $image = Imager->new(data => $data);
+
+            if (! $image && Imager->errstr) {
+                confess "you must provide a base64 encoded png. We were not able to create an Imager object after base64 decoding your input; Imager's error message was:\n\n" . Imager->errstr;
+            }
+            else {
+                return $image;
+            }
         }
     },
     required => 1
@@ -374,9 +381,9 @@ sub _extract_image {
     my ($self, $file_or_image) = @_;
 
     my $err_msg = 'We were expecting one of: a filename, Imager object, or Selenium::Screenshot object';
-    die $err_msg unless defined $file_or_image;
+    croak $err_msg unless defined $file_or_image;
 
-    if ( blessed( $file_or_image) ) {
+    if ( blessed( $file_or_image ) ) {
         if ($file_or_image->isa('Selenium::Screenshot')) {
             return $file_or_image->png;
         }
@@ -409,7 +416,7 @@ Selenium::Screenshot - Compare and contrast Webdriver screenshots in PNG format
 
 =head1 VERSION
 
-version 0.05
+version 0.06
 
 =head1 SYNOPSIS
 
