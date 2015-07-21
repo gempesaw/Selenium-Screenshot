@@ -1,5 +1,9 @@
 Revision history for perl module Selenium::Screenshot
 
+0.06 2015-07-21
+ - Fix test failures on old perls
+ - Coerce the png attribute more strictly (die when its invalid)
+
 0.05 2015-07-17
  - Begin auto-padding images to avoid Imager dying messages
 
