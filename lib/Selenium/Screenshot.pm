@@ -6,7 +6,7 @@ use Image::Compare;
 use Imager qw/:handy/;
 use Imager::Color;
 use Imager::Fountain;
-use Carp qw/croak carp/;
+use Carp qw/croak carp confess/;
 use Cwd qw/abs_path/;
 use MIME::Base64;
 use Scalar::Util qw/blessed/;
@@ -84,8 +84,9 @@ has png => (
         else {
             my $data = decode_base64($png_or_image);
             my $image = Imager->new(data => $data);
-            if (Imager->errstr) {
-                die "you must provide a base64 encoded png. We were not able to create an Imager object after base64 decoding your input; Imager's error message was:\n\n" . Imager->errstr;
+
+            if (! $image && Imager->errstr) {
+                confess "you must provide a base64 encoded png. We were not able to create an Imager object after base64 decoding your input; Imager's error message was:\n\n" . Imager->errstr;
             }
             else {
                 return $image;
