@@ -643,16 +643,9 @@ sub _img_exclude {
 
 sub _img_target {
     my ($self, $img, $target) = @_;
-    $target //= $self->target;
+    _coerce_target($target);
 
     my ($size, $loc) = ($target->{size}, $target->{location});
-
-    unless (exists $loc->{x}
-            && exists $loc->{y}
-            && exists $size->{width}
-            && exists $size->{height}) {
-        next;
-    }
 
     my $left = $loc->{x};
     my $top = $loc->{y};
@@ -666,6 +659,21 @@ sub _img_target {
         right => $right,
         bottom => $bottom
     );
+}
+
+sub _coerce_target {
+    my ($target) = @_;
+    croak 'Needs a target' unless $target;
+
+    my ($size, $loc) = ($target->{size}, $target->{location});
+
+    unless (exists $loc->{x}
+            && exists $loc->{y}
+            && exists $size->{width}
+            && exists $size->{height}) {
+        croak 'Target is of incorrect format';
+    }
+    return 1;
 }
 
 sub _sanitize_string {
