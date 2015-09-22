@@ -159,7 +159,7 @@ has exclude => (
         my ($exclude) = @_;
 
         foreach my $rect (@{ $exclude }) {
-            croak 'Each exclude region must have size and location keys.'
+            croak 'Each exclude region must have size and location.'
               unless exists $rect->{size} && exists $rect->{location};
         }
 
@@ -206,7 +206,7 @@ has target => (
     coerce => sub {
         my ($rect) = @_;
 
-        croak 'Each exclude region must have size and location keys.'
+        croak 'Each target region must have size and location.'
           unless exists $rect->{size} && exists $rect->{location};
 
         return $rect;
