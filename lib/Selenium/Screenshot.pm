@@ -294,10 +294,6 @@ has _cmp => (
         my ($self) = @_;
         my $cmp = Image::Compare->new;
 
-        if ($self->has_target) {
-            my $png = $self->_img_target($self->png);
-            $self->_set_png($png);
-        }
 
         if ($self->has_exclude) {
             my $png = $self->_img_exclude($self->png);
@@ -475,7 +471,6 @@ sub _set_opponent {
         $opponent = $new_opp;
     }
 
-    $opponent = $self->_img_target( $opponent ) if $self->has_target;
     $opponent = $self->_img_exclude( $opponent ) if $self->has_exclude;
 
     $self->_cmp->set_image2( img => $opponent );
