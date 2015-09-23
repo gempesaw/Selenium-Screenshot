@@ -6,7 +6,7 @@ Selenium::Screenshot - Compare and contrast Webdriver screenshots in PNG format
 
 # VERSION
 
-version 0.06
+version 0.07
 
 # SYNOPSIS
 
@@ -118,35 +118,6 @@ generating your exclude data structure, the following map might help:
         exclude => [ @exclude ],
     );
 
-## target
-
-Pass in a hashref with the size and location of the element you'd like
-to target. This can be useful if you want to assert that a particular
-element on your page stays the same across builds.
-
-Again, like in the case for ["exclude"](#exclude), we'd like to make this easier
-for you but unfortunately we're uncomfortable directly invoking the
-methods on WebElement ourselves. For the time being, you'll have to
-provide this awkward HoH to specify a target.
-
-    my $elem = $driver->find_element($locator, $by);
-    my $s = Selenium::Screenshot->new(
-        png => $d->screenshot,
-        target => {
-            size => $elem->get_size,
-            location => $elem->get_element_location_in_view
-        }
-    );
-
-The screenshot will be cropped to the resulting dimensions as
-specified by the size and element location. Note that you will have to
-sort out issues when the element is not immediately displayed on the
-screen by invoking
-["get\_element\_location\_in\_view" in Selenium::Remote::WebElement](https://metacpan.org/pod/Selenium::Remote::WebElement#get_element_location_in_view). This is
-especially true if you're using ["target"](#target) along with ["exclude"](#exclude), as
-the locations of the elements you're excluding will surely change
-after scrolling to bring your targeted element in to view.
-
 ## threshold
 
 OPTIONAL - set the threshold at which images should be considered the
@@ -178,6 +149,35 @@ regex-substituted by '-' in the filename.
             browser => 'firefox'
         }
     );
+
+## target
+
+Pass in a hashref with the size and location of the element you'd like
+to target. This can be useful if you want to assert that a particular
+element on your page stays the same across builds.
+
+Again, like in the case for ["exclude"](#exclude), we'd like to make this easier
+for you but unfortunately we're uncomfortable directly invoking the
+methods on WebElement ourselves. For the time being, you'll have to
+provide this awkward HoH to specify a target.
+
+    my $elem = $driver->find_element($locator, $by);
+    my $s = Selenium::Screenshot->new(
+        png => $d->screenshot,
+        target => {
+            size => $elem->get_size,
+            location => $elem->get_element_location_in_view
+        }
+    );
+
+The screenshot will be cropped to the resulting dimensions as
+specified by the size and element location. Note that you will have to
+sort out issues when the element is not immediately displayed on the
+screen by invoking
+["get\_element\_location\_in\_view" in Selenium::Remote::WebElement](https://metacpan.org/pod/Selenium::Remote::WebElement#get_element_location_in_view). This is
+especially true if you're using ["target"](#target) along with ["exclude"](#exclude), as
+the locations of the elements you're excluding will surely change
+after scrolling to bring your targeted element in to view.
 
 # METHODS
 
