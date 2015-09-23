@@ -230,15 +230,21 @@ WITH_REAL_PNG: {
             };
 
             my $img = Imager->new(file => $sample_png);
-            $img = Selenium::Screenshot->_img_target($img, $target);
+            $img = Selenium::Screenshot->_crop_to_target($img, $target);
 
             cmp_ok($img->getwidth, 'eq', 1, 'target crops the png to x size');
             cmp_ok($img->getheight, 'eq', 1, 'target crops the png to y size');
         }
 
       E2E: {
+            my $left_half = {
+                size => { width => 8, height => 16 },
+                location => { x => 0, y => 0 }
+            };
+
             my $right_half_black = Selenium::Screenshot->new(
                 png => $png_string,
+                target => $left_half,
                 exclude => [{
                     size => { width => 8, height => 16 },
                     location => { x => 8, y => 0 }
@@ -247,10 +253,7 @@ WITH_REAL_PNG: {
 
             my $target_left_half = Selenium::Screenshot->new(
                 png => $png_string,
-                target => {
-                    size => { width => 8, height => 16 },
-                    location => { x => 0, y => 0 }
-                }
+                target => $left_half
             );
 
             ok($target_left_half->compare($right_half_black), 'target crops a screenshot as desired');
