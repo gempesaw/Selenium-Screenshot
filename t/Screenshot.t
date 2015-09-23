@@ -225,15 +225,25 @@ WITH_REAL_PNG: {
   TARGET: {
       UNIT: {
             my $target = {
-                size     => { width => 1, height => 1 },
+                size     => { width => 10, height => 10 },
                 location => { x => 0, y => 0 }
             };
 
             my $img = Imager->new(file => $sample_png);
             $img = Selenium::Screenshot->_crop_to_target($img, $target);
 
-            cmp_ok($img->getwidth, 'eq', 1, 'target crops the png to x size');
-            cmp_ok($img->getheight, 'eq', 1, 'target crops the png to y size');
+            cmp_ok($img->getwidth, 'eq', 10, 'target crops the png to x size');
+            cmp_ok($img->getheight, 'eq', 10, 'target crops the png to y size');
+
+            my $screenshot = Selenium::Screenshot->new(
+                png => $img,
+                target => $target
+            );
+
+            is($screenshot->png->getwidth, 10,
+               'target crops the png to the proper getwidth in BUILDARGS');
+            is($screenshot->png->getheight, 10,
+               'target crops the png to the proper getheight in BUILDARGS');
         }
 
       E2E: {
