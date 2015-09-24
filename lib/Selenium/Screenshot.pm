@@ -635,7 +635,6 @@ sub _img_exclude {
 
 sub _crop_to_target {
     my ($self, $img, $target) = @_;
-    $DB::single=2;
     $img = $self->_extract_image( $img );
 
     my ($size, $loc) = ($target->{size}, $target->{location});
