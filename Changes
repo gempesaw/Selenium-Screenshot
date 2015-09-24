@@ -1,5 +1,8 @@
 Revision history for perl module Selenium::Screenshot
 
+0.07 2015-09-24
+ - Fix target element implementation
+
 0.06 2015-07-21
  - Fix test failures on old perls
  - Coerce the png attribute more strictly (die when its invalid)
