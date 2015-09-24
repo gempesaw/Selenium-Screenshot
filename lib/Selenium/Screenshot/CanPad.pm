@@ -1,5 +1,5 @@
 package Selenium::Screenshot::CanPad;
-$Selenium::Screenshot::CanPad::VERSION = '0.06';
+$Selenium::Screenshot::CanPad::VERSION = '0.07';
 use Scalar::Util qw/blessed/;
 use Carp qw/croak/;
 # ABSTRACT: Provides subs for coercing two images to the exact width and height
@@ -98,7 +98,7 @@ Selenium::Screenshot::CanPad - Provides subs for coercing two images to the exac
 
 =head1 VERSION
 
-version 0.06
+version 0.07
 
 =head1 SYNOPSIS
 

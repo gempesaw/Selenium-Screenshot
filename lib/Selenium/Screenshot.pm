@@ -1,5 +1,5 @@
 package Selenium::Screenshot;
-$Selenium::Screenshot::VERSION = '0.06';
+$Selenium::Screenshot::VERSION = '0.07';
 # ABSTRACT: Compare and contrast Webdriver screenshots in PNG format
 use Moo;
 use Image::Compare;
@@ -47,27 +47,11 @@ has exclude => (
         my ($exclude) = @_;
 
         foreach my $rect (@{ $exclude }) {
-            croak 'Each exclude region must have size and location keys.'
+            croak 'Each exclude region must have size and location.'
               unless exists $rect->{size} && exists $rect->{location};
         }
 
         return $exclude;
-    },
-    predicate => 1
-);
-
-
-has target => (
-    is => 'ro',
-    lazy => 1,
-    default => sub { {} },
-    coerce => sub {
-        my ($rect) = @_;
-
-        croak 'Each exclude region must have size and location keys.'
-          unless exists $rect->{size} && exists $rect->{location};
-
-        return $rect;
     },
     predicate => 1
 );
@@ -117,10 +101,6 @@ has _cmp => (
         my ($self) = @_;
         my $cmp = Image::Compare->new;
 
-        if ($self->has_target) {
-            my $png = $self->_img_target($self->png);
-            $self->_set_png($png);
-        }
 
         if ($self->has_exclude) {
             my $png = $self->_img_exclude($self->png);
@@ -137,6 +117,19 @@ has _cmp => (
 );
 
 with 'Selenium::Screenshot::CanPad';
+
+
+around BUILDARGS => sub {
+    my ($orig, $self, %args) = @_;
+
+    if ($args{target} && $self->_coerce_target($args{target})) {
+        my $cropped_png = $self->_crop_to_target($args{png}, $args{target});
+        return $self->$orig(%args, png => $cropped_png);
+    }
+    else {
+        return $self->$orig(%args);
+    }
+};
 
 
 sub compare {
@@ -240,7 +233,6 @@ sub _set_opponent {
         $opponent = $new_opp;
     }
 
-    $opponent = $self->_img_target( $opponent ) if $self->has_target;
     $opponent = $self->_img_exclude( $opponent ) if $self->has_exclude;
 
     $self->_cmp->set_image2( img => $opponent );
@@ -343,18 +335,11 @@ sub _img_exclude {
     return $copy;
 }
 
-sub _img_target {
+sub _crop_to_target {
     my ($self, $img, $target) = @_;
-    $target //= $self->target;
+    $img = $self->_extract_image( $img );
 
     my ($size, $loc) = ($target->{size}, $target->{location});
-
-    unless (exists $loc->{x}
-            && exists $loc->{y}
-            && exists $size->{width}
-            && exists $size->{height}) {
-        next;
-    }
 
     my $left = $loc->{x};
     my $top = $loc->{y};
@@ -368,6 +353,25 @@ sub _img_target {
         right => $right,
         bottom => $bottom
     );
+}
+
+sub _img_target {
+    my ($self) = shift;
+    return $self->_crop_to_target( @_ );
+}
+
+sub _coerce_target {
+    my ($self, $target) = @_;
+    my ($size, $loc) = ($target->{size}, $target->{location});
+
+    unless (exists $loc->{x}
+            && exists $loc->{y}
+            && exists $size->{width}
+            && exists $size->{height}) {
+        croak 'Target is of incorrect format';
+    }
+
+    return 1;
 }
 
 sub _sanitize_string {
@@ -395,7 +399,13 @@ sub _extract_image {
         }
     }
     else {
-        return Imager->new(file => $file_or_image);
+        if ($file_or_image !~ /\n/ && -e $file_or_image) {
+            return Imager->new(file => $file_or_image);
+        }
+        else {
+            return Imager->new(data => decode_base64($file_or_image));
+        }
+
     }
 }
 
@@ -416,7 +426,7 @@ Selenium::Screenshot - Compare and contrast Webdriver screenshots in PNG format
 
 =head1 VERSION
 
-version 0.06
+version 0.07
 
 =head1 SYNOPSIS
 
@@ -528,35 +538,6 @@ generating your exclude data structure, the following map might help:
         exclude => [ @exclude ],
     );
 
-=head2 target
-
-Pass in a hashref with the size and location of the element you'd like
-to target. This can be useful if you want to assert that a particular
-element on your page stays the same across builds.
-
-Again, like in the case for L</exclude>, we'd like to make this easier
-for you but unfortunately we're uncomfortable directly invoking the
-methods on WebElement ourselves. For the time being, you'll have to
-provide this awkward HoH to specify a target.
-
-    my $elem = $driver->find_element($locator, $by);
-    my $s = Selenium::Screenshot->new(
-        png => $d->screenshot,
-        target => {
-            size => $elem->get_size,
-            location => $elem->get_element_location_in_view
-        }
-    );
-
-The screenshot will be cropped to the resulting dimensions as
-specified by the size and element location. Note that you will have to
-sort out issues when the element is not immediately displayed on the
-screen by invoking
-L<Selenium::Remote::WebElement/get_element_location_in_view>. This is
-especially true if you're using L</target> along with L</exclude>, as
-the locations of the elements you're excluding will surely change
-after scrolling to bring your targeted element in to view.
-
 =head2 threshold
 
 OPTIONAL - set the threshold at which images should be considered the
@@ -588,6 +569,35 @@ regex-substituted by '-' in the filename.
             browser => 'firefox'
         }
     );
+
+=head2 target
+
+Pass in a hashref with the size and location of the element you'd like
+to target. This can be useful if you want to assert that a particular
+element on your page stays the same across builds.
+
+Again, like in the case for L</exclude>, we'd like to make this easier
+for you but unfortunately we're uncomfortable directly invoking the
+methods on WebElement ourselves. For the time being, you'll have to
+provide this awkward HoH to specify a target.
+
+    my $elem = $driver->find_element($locator, $by);
+    my $s = Selenium::Screenshot->new(
+        png => $d->screenshot,
+        target => {
+            size => $elem->get_size,
+            location => $elem->get_element_location_in_view
+        }
+    );
+
+The screenshot will be cropped to the resulting dimensions as
+specified by the size and element location. Note that you will have to
+sort out issues when the element is not immediately displayed on the
+screen by invoking
+L<Selenium::Remote::WebElement/get_element_location_in_view>. This is
+especially true if you're using L</target> along with L</exclude>, as
+the locations of the elements you're excluding will surely change
+after scrolling to bring your targeted element in to view.
 
 =head1 METHODS
 
