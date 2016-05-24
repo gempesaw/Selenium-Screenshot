@@ -26,6 +26,7 @@ my $screenshot = Selenium::Screenshot->new(%$basic_args);
 
 my $sample_png = $FindBin::Bin . '/sample.png';
 open (my $image_fh, "<", $sample_png) or die 'cannot open: ' . $!;
+binmode $image_fh;
 my $png_string = encode_base64( do{ local $/ = undef; <$image_fh>; } );
 close ($image_fh);
 
