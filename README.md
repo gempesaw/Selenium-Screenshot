@@ -6,7 +6,7 @@ Selenium::Screenshot - Compare and contrast Webdriver screenshots in PNG format
 
 # VERSION
 
-version 0.07
+version 0.08
 
 # SYNOPSIS
 
@@ -318,6 +318,10 @@ feature.
 # AUTHOR
 
 Daniel Gempesaw <gempesaw@gmail.com>
+
+# CONTRIBUTOR
+
+Nicolas Georges <xlat@cpan.org>
 
 # COPYRIGHT AND LICENSE
 
